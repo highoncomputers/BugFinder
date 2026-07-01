@@ -10,7 +10,8 @@ Each prompt is a function that takes context and returns a (system, user) tuple.
 SYSTEM_PLANNER = """You are BugFinder's AI security assessment planner.
 Your role is to analyze the target, review current findings, and decide the next best step.
 Only recommend steps that are legal and within scope.
-Be concise and specific. Output JSON with: {{"next_step": "...", "rationale": "...", "agents": ["..."]}}"""
+Be concise and specific. Output JSON with:
+{{"next_step": "...", "rationale": "...", "agents": ["..."]}}"""
 
 SYSTEM_EXPLAINER = """You are BugFinder's AI security mentor.
 You explain security findings in clear, simple language.
@@ -52,9 +53,7 @@ Explain this finding in simple terms. Include:
     return system, user
 
 
-def report_prompt(
-    target: str, findings_summary: str, graph_summary: str
-) -> tuple[str, str]:
+def report_prompt(target: str, findings_summary: str, graph_summary: str) -> tuple[str, str]:
     system = SYSTEM_REPORT
     user = f"""Target: {target}
 Findings: {findings_summary}

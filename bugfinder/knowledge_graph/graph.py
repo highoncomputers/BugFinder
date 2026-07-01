@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import networkx as nx
 from typing import Any
+
+import networkx as nx
 
 
 class KnowledgeGraph:
@@ -12,9 +13,7 @@ class KnowledgeGraph:
         attrs["type"] = node_type
         self.graph.add_node(node_id, **attrs)
 
-    def add_edge(
-        self, source: str, target: str, relationship: str, **attrs: Any
-    ) -> None:
+    def add_edge(self, source: str, target: str, relationship: str, **attrs: Any) -> None:
         attrs["relationship"] = relationship
         self.graph.add_edge(source, target, **attrs)
 
@@ -34,15 +33,9 @@ class KnowledgeGraph:
         return result
 
     def get_nodes_by_type(self, node_type: str) -> list[tuple[str, dict[str, Any]]]:
-        return [
-            (n, dict(d))
-            for n, d in self.graph.nodes(data=True)
-            if d.get("type") == node_type
-        ]
+        return [(n, dict(d)) for n, d in self.graph.nodes(data=True) if d.get("type") == node_type]
 
-    def find_paths(
-        self, source: str, target: str, max_depth: int = 10
-    ) -> list[list[str]]:
+    def find_paths(self, source: str, target: str, max_depth: int = 10) -> list[list[str]]:
         try:
             paths = nx.all_simple_paths(self.graph, source, target, cutoff=max_depth)
             return list(paths)
@@ -56,7 +49,7 @@ class KnowledgeGraph:
             chain.append({"node": neighbor, "data": node_data, "edge": edge_info})
         return chain
 
-    def merge(self, other: "KnowledgeGraph") -> None:
+    def merge(self, other: KnowledgeGraph) -> None:
         self.graph = nx.compose(self.graph, other.graph)
 
     def clear(self) -> None:
@@ -72,11 +65,8 @@ class KnowledgeGraph:
 
     def to_dict(self) -> dict:
         return {
-            "nodes": [
-                {"id": n, **dict(d)} for n, d in self.graph.nodes(data=True)
-            ],
+            "nodes": [{"id": n, **dict(d)} for n, d in self.graph.nodes(data=True)],
             "edges": [
-                {"source": u, "target": v, **dict(d)}
-                for u, v, d in self.graph.edges(data=True)
+                {"source": u, "target": v, **dict(d)} for u, v, d in self.graph.edges(data=True)
             ],
         }

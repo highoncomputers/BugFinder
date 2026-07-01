@@ -25,7 +25,7 @@ class NVIDIAClient:
         self.base_url = base_url or settings.nvidia_base_url
         self._client: httpx.AsyncClient | None = None
 
-    async def __aenter__(self) -> "NVIDIAClient":
+    async def __aenter__(self) -> NVIDIAClient:
         self._client = httpx.AsyncClient(
             base_url=self.base_url,
             timeout=httpx.Timeout(settings.request_timeout),
@@ -51,7 +51,11 @@ class NVIDIAClient:
         response_format: dict | None = None,
     ) -> dict[str, Any]:
         if not self.api_key:
-            raise AIClientError("NVIDIA API key not configured. Set BF_NVIDIA_API_KEY or run `bf config nvidia.api_key YOUR_KEY`.")
+            msg = (
+                "NVIDIA API key not configured. "
+                "Set BF_NVIDIA_API_KEY or run `bf config nvidia.api_key YOUR_KEY`."
+            )
+            raise AIClientError(msg)
 
         payload: dict[str, Any] = {
             "model": self.model,

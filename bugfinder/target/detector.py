@@ -1,16 +1,13 @@
 from __future__ import annotations
 
-import re
 import pathlib
+import re
 
 from bugfinder.core.types import TargetType
 
-
 IPV4_RE = re.compile(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
 CIDR_RE = re.compile(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/\d{1,2}$")
-DOMAIN_RE = re.compile(
-    r"^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$"
-)
+DOMAIN_RE = re.compile(r"^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$")
 URL_RE = re.compile(r"^https?://", re.IGNORECASE)
 SWAGGER_FILE = re.compile(r"(swagger|openapi|api-spec)\.(json|yaml|yml)$", re.IGNORECASE)
 
@@ -55,7 +52,7 @@ def _is_kubernetes_manifest(target: str) -> bool:
     try:
         text = pathlib.Path(target).read_text(encoding="utf-8", errors="ignore")
         return "apiVersion" in text and "kind" in text
-    except (OSError, IOError):
+    except OSError:
         return False
 
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 import enum
 
 
-class TargetType(str, enum.Enum):
+class TargetType(enum.StrEnum):
     WEBSITE = "website"
     API = "api"
     GRAPHQL = "graphql"
@@ -20,7 +20,7 @@ class TargetType(str, enum.Enum):
     UNKNOWN = "unknown"
 
 
-class Severity(str, enum.Enum):
+class Severity(enum.StrEnum):
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
@@ -28,13 +28,13 @@ class Severity(str, enum.Enum):
     INFO = "info"
 
 
-class Confidence(str, enum.Enum):
+class Confidence(enum.StrEnum):
     VERIFIED = "verified"
     LIKELY = "likely"
     NEEDS_REVIEW = "needs_review"
 
 
-class FindingStatus(str, enum.Enum):
+class FindingStatus(enum.StrEnum):
     OPEN = "open"
     VERIFIED = "verified"
     FALSE_POSITIVE = "false_positive"
@@ -42,7 +42,7 @@ class FindingStatus(str, enum.Enum):
     ACKNOWLEDGED = "acknowledged"
 
 
-class ScanStatus(str, enum.Enum):
+class ScanStatus(enum.StrEnum):
     PENDING = "pending"
     RUNNING = "running"
     PAUSED = "paused"
@@ -51,7 +51,7 @@ class ScanStatus(str, enum.Enum):
     CANCELLED = "cancelled"
 
 
-class AgentStatus(str, enum.Enum):
+class AgentStatus(enum.StrEnum):
     IDLE = "idle"
     RUNNING = "running"
     COMPLETED = "completed"

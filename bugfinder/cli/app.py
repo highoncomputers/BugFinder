@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from textual.app import App, ComposeResult
-from textual.screen import Screen
-from textual.widgets import Header, Footer, Static, Button, Input, ListView, ListItem
 from textual.containers import Horizontal, Vertical
+from textual.screen import Screen
+from textual.widgets import Button, Footer, Header, Input, ListView, Static
 
 
 class WelcomeScreen(Screen):

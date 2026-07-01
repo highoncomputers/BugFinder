@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from urllib.parse import urlparse
 
-from bugfinder.core.exceptions import ScopeViolationError
 from bugfinder.core.config import settings
+from bugfinder.core.exceptions import ScopeViolationError
 
 
 class ScopeValidator:

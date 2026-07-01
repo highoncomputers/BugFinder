@@ -49,11 +49,13 @@ def detect_high_entropy_strings(text: str, min_entropy: float = 3.5) -> list[dic
         for match in re.finditer(pattern, text):
             entropy = shannon_entropy(match.group())
             if entropy >= threshold:
-                results.append({
-                    "value": match.group()[:50],
-                    "entropy": round(entropy, 2),
-                    "pattern": label,
-                    "start": match.start(),
-                    "end": match.end(),
-                })
+                results.append(
+                    {
+                        "value": match.group()[:50],
+                        "entropy": round(entropy, 2),
+                        "pattern": label,
+                        "start": match.start(),
+                        "end": match.end(),
+                    }
+                )
     return results

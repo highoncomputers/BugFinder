@@ -7,7 +7,6 @@ import httpx
 from bugfinder.core.config import settings
 from bugfinder.security.rate_limiter import RateLimiter
 
-
 _default_headers = {
     "User-Agent": settings.user_agent,
     "Accept": "*/*",

@@ -4,9 +4,9 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any
 
-from bugfinder.knowledge_graph.graph import KnowledgeGraph
 from bugfinder.ai.client import NVIDIAClient
 from bugfinder.database.repository import Repository
+from bugfinder.knowledge_graph.graph import KnowledgeGraph
 
 
 @dataclass
@@ -39,8 +39,7 @@ class BaseAgent(ABC):
         self.context = context
 
     @abstractmethod
-    async def execute(self) -> AgentResult:
-        ...
+    async def execute(self) -> AgentResult: ...
 
     async def initialize(self) -> None:
         pass

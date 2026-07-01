@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from ipaddress import ip_address, ip_network
 from urllib.parse import urlparse
 

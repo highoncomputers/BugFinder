@@ -1,30 +1,25 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import (
-    Column,
-    String,
-    Text,
+    JSON,
     DateTime,
     Float,
-    Integer,
-    Boolean,
-    JSON,
     ForeignKey,
-    Enum as SAEnum,
+    Integer,
+    String,
+    Text,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from sqlalchemy.dialects.sqlite import JSON as SQLiteJSON
 
 from bugfinder.core.types import (
-    TargetType,
-    Severity,
+    AgentStatus,
     Confidence,
     FindingStatus,
     ScanStatus,
-    AgentStatus,
+    Severity,
 )
 
 
@@ -33,7 +28,7 @@ class Base(DeclarativeBase):
 
 
 def _utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _uuid() -> str:

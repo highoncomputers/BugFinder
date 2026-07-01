@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-import os
 from pathlib import Path
-from typing import Any
 
+from platformdirs import user_config_dir, user_data_dir
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from platformdirs import user_config_dir, user_data_dir
-
 
 APP_NAME = "bugfinder"
 
@@ -33,7 +30,9 @@ class Settings(BaseSettings):
 
     # Database
     database_url: str = Field(
-        default=f"sqlite+aiosqlite:///{Path(user_data_dir(APP_NAME, ensure_exists=True)) / 'bugfinder.db'}",
+        default=(
+            f"sqlite+aiosqlite:///{Path(user_data_dir(APP_NAME, ensure_exists=True)) / 'bf.db'}"
+        ),
         description="Database URL",
     )
 
@@ -42,9 +41,7 @@ class Settings(BaseSettings):
     default_scan_profile: str = Field(default="quick")
     request_timeout: int = Field(default=30)
     rate_limit_per_second: int = Field(default=50)
-    user_agent: str = Field(
-        default="BugFinder/0.1.0 (Security Assessment Tool)"
-    )
+    user_agent: str = Field(default="BugFinder/0.1.0 (Security Assessment Tool)")
     respect_robots: bool = Field(default=True)
 
     # Directories

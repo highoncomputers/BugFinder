@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import time
 from collections import defaultdict
-from collections.abc import AsyncGenerator
 
 
 class TokenBucket:
@@ -41,7 +40,7 @@ class RateLimiter:
         if domain:
             await self.domain_buckets[domain].wait()
 
-    async def __aenter__(self) -> "RateLimiter":
+    async def __aenter__(self) -> RateLimiter:
         return self
 
     async def __aexit__(self, *args: object) -> None:

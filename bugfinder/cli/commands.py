@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 import typer
 from rich import print as rprint
 from rich.panel import Panel
@@ -38,7 +36,7 @@ def scan(
     quick: bool = typer.Option(False, "--quick", "-q", help="Quick scan"),
     deep: bool = typer.Option(False, "--deep", "-d", help="Deep scan"),
     expert: bool = typer.Option(False, "--expert", "-e", help="Expert mode"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output report path"),
+    output: str | None = typer.Option(None, "--output", "-o", help="Output report path"),
     format: str = typer.Option("markdown", "--format", "-f", help="Report format"),
 ) -> None:
     """Scan a target for security vulnerabilities."""
@@ -78,7 +76,7 @@ def tui() -> None:
 def report(
     scan_id: str = typer.Argument(..., help="Scan session ID"),
     format: str = typer.Option("markdown", "--format", "-f", help="Report format"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output path"),
+    output: str | None = typer.Option(None, "--output", "-o", help="Output path"),
 ) -> None:
     """Generate a report from a completed scan."""
     rprint(f"[yellow]Generating {format} report for scan {scan_id}...[/yellow]")
@@ -111,7 +109,7 @@ def list_agents() -> None:
 @app.command()
 def plugin(
     action: str = typer.Argument(..., help="Action: install, remove, list"),
-    name: Optional[str] = typer.Argument(None, help="Plugin name"),
+    name: str | None = typer.Argument(None, help="Plugin name"),
 ) -> None:
     """Manage plugins."""
     rprint(f"[yellow]Plugin {action}: {name or 'all'}[/yellow]")

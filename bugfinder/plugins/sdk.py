@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from bugfinder.core.registry import registry
 
@@ -9,6 +10,7 @@ def hook(name: str) -> Callable:
     def decorator(fn: Callable) -> Callable:
         registry.register_hook(name, fn)
         return fn
+
     return decorator
 
 

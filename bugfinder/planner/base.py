@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from bugfinder.knowledge_graph.graph import KnowledgeGraph
 from bugfinder.ai.client import NVIDIAClient
 from bugfinder.database.repository import Repository
+from bugfinder.knowledge_graph.graph import KnowledgeGraph
 
 
 class BasePlanner(ABC):
@@ -19,5 +19,4 @@ class BasePlanner(ABC):
         self.repository = repository
 
     @abstractmethod
-    async def create_plan(self, target: str, target_type: str) -> list[dict]:
-        ...
+    async def create_plan(self, target: str, target_type: str) -> list[dict]: ...
