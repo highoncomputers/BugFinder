@@ -30,9 +30,7 @@ class Settings(BaseSettings):
 
     # Database
     database_url: str = Field(
-        default=(
-            f"sqlite+aiosqlite:///{Path(user_data_dir(APP_NAME, ensure_exists=True)) / 'bf.db'}"
-        ),
+        default=(f"sqlite+aiosqlite:///{Path(user_data_dir(APP_NAME, ensure_exists=True)) / 'bf.db'}"),
         description="Database URL",
     )
 

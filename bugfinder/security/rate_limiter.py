@@ -31,9 +31,7 @@ class TokenBucket:
 class RateLimiter:
     def __init__(self, rate_per_second: int = 50) -> None:
         self.global_bucket = TokenBucket(rate_per_second)
-        self.domain_buckets: dict[str, TokenBucket] = defaultdict(
-            lambda: TokenBucket(rate_per_second // 2)
-        )
+        self.domain_buckets: dict[str, TokenBucket] = defaultdict(lambda: TokenBucket(rate_per_second // 2))
 
     async def acquire(self, domain: str | None = None) -> None:
         await self.global_bucket.wait()

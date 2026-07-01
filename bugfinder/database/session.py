@@ -8,9 +8,7 @@ from bugfinder.core.config import settings
 from bugfinder.database.models import Base
 
 async_engine = create_async_engine(settings.database_url, echo=settings.debug)
-async_session_factory = async_sessionmaker(
-    async_engine, class_=AsyncSession, expire_on_commit=False
-)
+async_session_factory = async_sessionmaker(async_engine, class_=AsyncSession, expire_on_commit=False)
 
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:

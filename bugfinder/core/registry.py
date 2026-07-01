@@ -41,9 +41,7 @@ class Registry:
     def discover_agents(self, package: str = "bugfinder.agents") -> None:
         try:
             pkg = importlib.import_module(package)
-            for importer, modname, ispkg in pkgutil.walk_packages(
-                pkg.__path__, prefix=f"{package}."
-            ):
+            for importer, modname, ispkg in pkgutil.walk_packages(pkg.__path__, prefix=f"{package}."):
                 try:
                     importlib.import_module(modname)
                 except ImportError:

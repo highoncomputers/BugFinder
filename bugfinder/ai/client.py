@@ -51,10 +51,7 @@ class NVIDIAClient:
         response_format: dict | None = None,
     ) -> dict[str, Any]:
         if not self.api_key:
-            msg = (
-                "NVIDIA API key not configured. "
-                "Set BF_NVIDIA_API_KEY or run `bf config nvidia.api_key YOUR_KEY`."
-            )
+            msg = "NVIDIA API key not configured. Set BF_NVIDIA_API_KEY or run `bf config nvidia.api_key YOUR_KEY`."
             raise AIClientError(msg)
 
         payload: dict[str, Any] = {

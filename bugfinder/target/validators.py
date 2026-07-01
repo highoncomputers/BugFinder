@@ -21,9 +21,7 @@ class ScopeValidator:
             domain = domain.lower().strip()
             if hostname == domain or hostname.endswith(f".{domain}"):
                 return
-        raise ScopeViolationError(
-            f"Target '{hostname}' is outside authorized scope: {self.allowed_domains}"
-        )
+        raise ScopeViolationError(f"Target '{hostname}' is outside authorized scope: {self.allowed_domains}")
 
 
 def validate_url_scope(url: str, allowed_domains: list[str] | None = None) -> None:

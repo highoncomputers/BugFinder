@@ -39,9 +39,7 @@ class Repository:
         return list(result.scalars().all())
 
     # ScanSession
-    async def create_scan(
-        self, target: str, target_type: str, project_id: str | None = None
-    ) -> ScanSession:
+    async def create_scan(self, target: str, target_type: str, project_id: str | None = None) -> ScanSession:
         scan = ScanSession(target=target, target_type=target_type, project_id=project_id)
         self.session.add(scan)
         await self.commit()
@@ -74,9 +72,7 @@ class Repository:
         severity: str = "medium",
         **kwargs: Any,
     ) -> Finding:
-        finding = Finding(
-            scan_id=scan_id, title=title, description=description, severity=severity, **kwargs
-        )
+        finding = Finding(scan_id=scan_id, title=title, description=description, severity=severity, **kwargs)
         self.session.add(finding)
         await self.commit()
         return finding
@@ -88,9 +84,7 @@ class Repository:
         stmt = select(Finding).where(Finding.scan_id == scan_id)
         if severity:
             stmt = stmt.where(Finding.severity == severity)
-        result = await self.session.execute(
-            stmt.order_by(Finding.severity, Finding.discovered_at.desc())
-        )
+        result = await self.session.execute(stmt.order_by(Finding.severity, Finding.discovered_at.desc()))
         return list(result.scalars().all())
 
     # Asset

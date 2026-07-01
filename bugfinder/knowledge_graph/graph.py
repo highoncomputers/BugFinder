@@ -66,7 +66,5 @@ class KnowledgeGraph:
     def to_dict(self) -> dict:
         return {
             "nodes": [{"id": n, **dict(d)} for n, d in self.graph.nodes(data=True)],
-            "edges": [
-                {"source": u, "target": v, **dict(d)} for u, v, d in self.graph.edges(data=True)
-            ],
+            "edges": [{"source": u, "target": v, **dict(d)} for u, v, d in self.graph.edges(data=True)],
         }
