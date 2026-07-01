@@ -34,3 +34,4 @@ Thumbs.db
 *.db-wal
 reports/
 cache/
+*.db
