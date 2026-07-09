@@ -10,7 +10,7 @@ RUN uv sync --all-extras --no-dev
 COPY bugfinder/ bugfinder/
 RUN uv build
 
-FROM python:3.13-slim-bookworm
+FROM python:3.14-slim-bookworm
 
 RUN groupadd -r bugfinder && useradd -r -g bugfinder -d /app -s /sbin/nologin bugfinder
 
