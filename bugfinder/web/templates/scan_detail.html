@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Scan {{ scan_id }}{% endblock %}
+{% block content %}
+<div x-data="scanDetail({{ scan_id }})" x-init="init()">
+    <div class="mb-8">
+        <a href="/scans" class="text-emerald-400 hover:text-emerald-300 text-sm">&larr; Back to Scans</a>
+        <h1 class="text-3xl font-bold text-white mt-2" x-text="scan ? scan.target : 'Loading...'"></h1>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-gray-900 rounded-lg p-4 border border-gray-800">
+            <div class="text-sm text-gray-400">Status</div>
+            <div class="text-lg font-semibold" :class="{
+                'text-green-400': scan?.status === 'completed',
+                'text-yellow-400': scan?.status === 'running',
+                'text-red-400': scan?.status === 'failed',
+                'text-gray-400': scan?.status === 'pending'
+            }" x-text="scan?.status"></div>
+        </div>
+        <div class="bg-gray-900 rounded-lg p-4 border border-gray-800">
+            <div class="text-sm text-gray-400">Type</div>
+            <div class="text-lg font-semibold text-white" x-text="scan?.target_type"></div>
+        </div>
+        <div class="bg-gray-900 rounded-lg p-4 border border-gray-800">
+            <div class="text-sm text-gray-400">Progress</div>
+            <div class="flex items-center gap-2">
+                <div class="flex-1 bg-gray-800 rounded-full h-2">
+                    <div class="bg-emerald-500 h-2 rounded-full" :style="'width: ' + (scan?.progress || 0) + '%'"></div>
+                </div>
+                <span class="text-white text-sm" x-text="Math.round(scan?.progress || 0) + '%'"></span>
+            </div>
+        </div>
+        <div class="bg-gray-900 rounded-lg p-4 border border-gray-800">
+            <div class="text-sm text-gray-400">Findings</div>
+            <div class="text-lg font-semibold text-white" x-text="findings.length"></div>
+        </div>
+    </div>
+
+    <div class="bg-gray-900 rounded-lg border border-gray-800 p-6 mb-8">
+        <h2 class="text-lg font-semibold text-white mb-4">Findings</h2>
+        <div class="space-y-3">
+            <template x-for="f in findings" :key="f.id">
+                <a :href="'/findings/' + f.id" class="block bg-gray-800 rounded p-4 hover:bg-gray-750 transition">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <div class="text-white font-medium" x-text="f.title"></div>
+                            <div class="text-sm text-gray-400 mt-1" x-text="f.description"></div>
+                        </div>
+                        <div class="flex gap-2 ml-4">
+                            <span class="text-xs px-2 py-1 rounded font-medium" :class="{
+                                'bg-red-900 text-red-400': f.severity === 'critical',
+                                'bg-orange-900 text-orange-400': f.severity === 'high',
+                                'bg-yellow-900 text-yellow-400': f.severity === 'medium',
+                                'bg-blue-900 text-blue-400': f.severity === 'low',
+                                'bg-gray-800 text-gray-400': f.severity === 'info'
+                            }" x-text="f.severity"></span>
+                            <span class="text-xs px-2 py-1 rounded" :class="{
+                                'bg-green-900 text-green-400': f.confidence === 'high',
+                                'bg-yellow-900 text-yellow-400': f.confidence === 'medium',
+                                'bg-gray-800 text-gray-400': f.confidence === 'low'
+                            }" x-text="f.confidence"></span>
+                        </div>
+                    </div>
+                </a>
+            </template>
+            <div x-show="findings.length === 0" class="text-gray-500 text-center py-8">No findings yet</div>
+        </div>
+    </div>
+</div>
+
+<script>
+function scanDetail(scanId) {
+    return {
+        scan: null,
+        findings: [],
+        async init() {
+            const [scanRes, findingsRes] = await Promise.all([
+                fetch('/api/scans/' + scanId),
+                fetch('/api/findings?scan_id=' + scanId)
+            ]);
+            if (scanRes.ok) this.scan = await scanRes.json();
+            if (findingsRes.ok) this.findings = await findingsRes.json();
+        }
+    }
+}
+</script>
+{% endblock %}

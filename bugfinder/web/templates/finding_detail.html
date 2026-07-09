@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Finding {{ finding_id }}{% endblock %}
+{% block content %}
+<div x-data="findingDetail({{ finding_id }})" x-init="init()">
+    <div class="mb-8">
+        <a href="/findings" class="text-emerald-400 hover:text-emerald-300 text-sm">&larr; Back to Findings</a>
+        <h1 class="text-3xl font-bold text-white mt-2" x-text="finding ? finding.title : 'Loading...'"></h1>
+    </div>
+
+    <template x-if="finding">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-gray-900 rounded-lg border border-gray-800 p-6">
+                    <h2 class="text-lg font-semibold text-white mb-3">Description</h2>
+                    <p class="text-gray-300 leading-relaxed" x-text="finding.description"></p>
+                </div>
+
+                <div class="bg-gray-900 rounded-lg border border-gray-800 p-6" x-show="finding.evidence">
+                    <h2 class="text-lg font-semibold text-white mb-3">Evidence</h2>
+                    <pre class="bg-gray-950 text-gray-300 p-4 rounded overflow-x-auto text-sm font-mono" x-text="JSON.stringify(finding.evidence, null, 2)"></pre>
+                </div>
+
+                <div class="bg-gray-900 rounded-lg border border-gray-800 p-6" x-show="finding.remediation">
+                    <h2 class="text-lg font-semibold text-white mb-3">Remediation</h2>
+                    <p class="text-gray-300 leading-relaxed" x-text="finding.remediation"></p>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div class="bg-gray-900 rounded-lg border border-gray-800 p-4">
+                    <h3 class="text-sm text-gray-400 mb-3">Details</h3>
+                    <dl class="space-y-2">
+                        <div class="flex justify-between">
+                            <dt class="text-gray-500 text-sm">Severity</dt>
+                            <dd><span class="text-xs px-2 py-0.5 rounded font-medium" :class="{
+                                'bg-red-900 text-red-400': finding.severity === 'critical',
+                                'bg-orange-900 text-orange-400': finding.severity === 'high',
+                                'bg-yellow-900 text-yellow-400': finding.severity === 'medium',
+                                'bg-blue-900 text-blue-400': finding.severity === 'low',
+                                'bg-gray-800 text-gray-400': finding.severity === 'info'
+                            }" x-text="finding.severity"></span></dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-gray-500 text-sm">Confidence</dt>
+                            <dd class="text-white text-sm" x-text="finding.confidence"></dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-gray-500 text-sm">Status</dt>
+                            <dd class="text-white text-sm" x-text="finding.status"></dd>
+                        </div>
+                        <div class="flex justify-between" x-show="finding.cwe_id">
+                            <dt class="text-gray-500 text-sm">CWE</dt>
+                            <dd class="text-white text-sm" x-text="'CWE-' + finding.cwe_id"></dd>
+                        </div>
+                        <div class="flex justify-between" x-show="finding.owasp_category">
+                            <dt class="text-gray-500 text-sm">OWASP</dt>
+                            <dd class="text-white text-sm" x-text="finding.owasp_category"></dd>
+                        </div>
+                        <div class="flex justify-between" x-show="finding.cvss_score">
+                            <dt class="text-gray-500 text-sm">CVSS</dt>
+                            <dd class="text-white text-sm" x-text="finding.cvss_score"></dd>
+                        </div>
+                    </dl>
+                </div>
+
+                <div class="bg-gray-900 rounded-lg border border-gray-800 p-4">
+                    <h3 class="text-sm text-gray-400 mb-3">Actions</h3>
+                    <div class="space-y-2">
+                        <button @click="updateStatus('confirmed')" class="w-full bg-green-700 text-white px-3 py-1.5 rounded text-sm hover:bg-green-600">Confirm</button>
+                        <button @click="updateStatus('false_positive')" class="w-full bg-red-700 text-white px-3 py-1.5 rounded text-sm hover:bg-red-600">False Positive</button>
+                        <button @click="updateStatus('fixed')" class="w-full bg-blue-700 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-600">Mark Fixed</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+</div>
+
+<script>
+function findingDetail(findingId) {
+    return {
+        finding: null,
+        async init() {
+            const res = await fetch('/api/findings/' + findingId);
+            if (res.ok) this.finding = await res.json();
+        },
+        async updateStatus(status) {
+            const res = await fetch('/api/findings/' + findingId, {
+                method: 'PATCH',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ status })
+            });
+            if (res.ok) {
+                this.finding = await res.json();
+            }
+        }
+    }
+}
+</script>
+{% endblock %}

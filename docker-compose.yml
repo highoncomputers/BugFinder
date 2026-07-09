@@ -1,0 +1,80 @@
+version: "3.9"
+
+x-common: &common
+  image: bugfinder:latest
+  build:
+    context: .
+    dockerfile: Dockerfile
+  environment:
+    BF_DATABASE_URL: "postgresql+asyncpg://bugfinder:bugfinder@postgres:5432/bugfinder"
+    BF_REDIS_URL: "redis://redis:6379/0"
+    BF_WEB_HOST: "0.0.0.0"
+    BF_WEB_PORT: 8080
+    BF_NVIDIA_API_KEY: ${BF_NVIDIA_API_KEY:-}
+    BF_ALLOWED_DOMAINS: ${BF_ALLOWED_DOMAINS:-}
+    BF_BEGINNER_MODE: "true"
+    BF_EDUCATIONAL_MODE: "true"
+    BF_LOG_LEVEL: ${BF_LOG_LEVEL:-INFO}
+  volumes:
+    - bugfinder_data:/data
+    - bugfinder_reports:/app/reports
+  restart: unless-stopped
+  depends_on:
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_started
+
+services:
+  app:
+    <<: *common
+    ports:
+      - "${BF_WEB_PORT:-8080}:8080"
+    command: ["web", "--host", "0.0.0.0", "--port", "8080"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8080/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  worker:
+    <<: *common
+    command: ["worker"]
+    ports: []
+
+  beat:
+    <<: *common
+    command: ["beat"]
+    ports: []
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: bugfinder
+      POSTGRES_PASSWORD: bugfinder
+      POSTGRES_DB: bugfinder
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bugfinder"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  bugfinder_data:
+  bugfinder_reports:
+  postgres_data:
+  redis_data:

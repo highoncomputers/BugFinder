@@ -8,7 +8,10 @@ build/
 *.so
 .pytest_cache/
 .coverage
+.coverage.*
 htmlcov/
+coverage.xml
+*.db
 
 # uv
 .venv/
@@ -17,21 +20,29 @@ uv.lock
 # Environment
 .env
 .env.local
+.env.production
 
 # OS
 .DS_Store
 Thumbs.db
+*.swp
+*.swo
+*~
 
 # IDE
 .vscode/
 .idea/
-*.swp
-*.swo
+*.iml
 
 # BugFinder runtime
-*.db
-*.db-journal
-*.db-wal
 reports/
 cache/
-*.db
+*.db-journal
+*.db-wal
+
+# Docker
+.dockerignore
+
+# Logs
+*.log
+logs/

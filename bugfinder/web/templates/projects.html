@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Projects{% endblock %}
+{% block content %}
+<div x-data="projectsPage()" x-init="init()">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold text-white">Projects</h1>
+        <button @click="showForm = true" class="bg-emerald-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-emerald-700">New Project</button>
+    </div>
+
+    <div x-show="showForm" class="bg-gray-900 rounded-lg border border-gray-800 p-6 mb-6">
+        <h2 class="text-lg font-semibold text-white mb-4">Create Project</h2>
+        <form @submit.prevent="createProject" class="space-y-4">
+            <div>
+                <label class="block text-sm text-gray-400 mb-1">Name</label>
+                <input type="text" x-model="formName" required class="w-full bg-gray-800 text-white rounded px-3 py-2 border border-gray-700 focus:border-emerald-500 focus:outline-none">
+            </div>
+            <div>
+                <label class="block text-sm text-gray-400 mb-1">Description (optional)</label>
+                <textarea x-model="formDesc" rows="3" class="w-full bg-gray-800 text-white rounded px-3 py-2 border border-gray-700 focus:border-emerald-500 focus:outline-none"></textarea>
+            </div>
+            <div class="flex gap-3">
+                <button type="submit" class="bg-emerald-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-emerald-700">Create</button>
+                <button type="button" @click="showForm = false" class="text-gray-400 px-4 py-2 text-sm">Cancel</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <template x-for="p in projects" :key="p.id">
+            <div class="bg-gray-900 rounded-lg border border-gray-800 p-5">
+                <h3 class="text-lg font-semibold text-white" x-text="p.name"></h3>
+                <p class="text-sm text-gray-400 mt-1" x-text="p.description || 'No description'"></p>
+                <div class="flex justify-between items-center mt-4 text-sm">
+                    <span class="text-gray-500" x-text="p.scan_count + ' scans'"></span>
+                    <span class="text-gray-500" x-text="new Date(p.created_at).toLocaleDateString()"></span>
+                </div>
+            </div>
+        </template>
+        <div x-show="projects.length === 0" class="col-span-full text-gray-500 text-center py-12">No projects yet</div>
+    </div>
+</div>
+
+<script>
+function projectsPage() {
+    return {
+        projects: [],
+        showForm: false,
+        formName: '',
+        formDesc: '',
+        async init() {
+            const res = await fetch('/api/projects');
+            if (res.ok) this.projects = await res.json();
+        },
+        async createProject() {
+            const res = await fetch('/api/projects', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ name: this.formName, description: this.formDesc })
+            });
+            if (res.ok) {
+                const project = await res.json();
+                this.projects.push(project);
+                this.showForm = false;
+                this.formName = '';
+                this.formDesc = '';
+            }
+        }
+    }
+}
+</script>
+{% endblock %}

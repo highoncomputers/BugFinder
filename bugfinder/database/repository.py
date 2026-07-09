@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -39,8 +39,12 @@ class Repository:
         return list(result.scalars().all())
 
     # ScanSession
-    async def create_scan(self, target: str, target_type: str, project_id: str | None = None) -> ScanSession:
-        scan = ScanSession(target=target, target_type=target_type, project_id=project_id)
+    async def create_scan(
+        self, target: str, target_type: str | None = None,
+        profile: str = "quick", project_id: str | None = None,
+    ) -> ScanSession:
+        target_type_str = target_type.value if hasattr(target_type, "value") else str(target_type) if target_type else "unknown"
+        scan = ScanSession(target=target, target_type=target_type_str, profile=profile, project_id=project_id)
         self.session.add(scan)
         await self.commit()
         return scan
@@ -52,7 +56,8 @@ class Repository:
         scan = await self.get_scan(scan_id)
         if scan:
             for key, value in kwargs.items():
-                setattr(scan, key, value)
+                if value is not None:
+                    setattr(scan, key, value)
             await self.commit()
         return scan
 
@@ -70,9 +75,29 @@ class Repository:
         title: str,
         description: str | None = None,
         severity: str = "medium",
+        confidence: str = "medium",
+        category: str | None = None,
+        evidence: Any = None,
+        cwe_id: str | None = None,
+        owasp_category: str | None = None,
+        cvss_score: float | None = None,
+        remediation: str | None = None,
         **kwargs: Any,
     ) -> Finding:
-        finding = Finding(scan_id=scan_id, title=title, description=description, severity=severity, **kwargs)
+        finding = Finding(
+            scan_id=scan_id,
+            title=title,
+            description=description,
+            severity=severity,
+            confidence=confidence,
+            category=category,
+            evidence=evidence,
+            cwe_id=cwe_id,
+            owasp_category=owasp_category,
+            cvss_score=cvss_score,
+            remediation=remediation,
+            **kwargs,
+        )
         self.session.add(finding)
         await self.commit()
         return finding
@@ -80,12 +105,23 @@ class Repository:
     async def get_finding(self, finding_id: str) -> Finding | None:
         return await self.session.get(Finding, finding_id)
 
-    async def list_findings(self, scan_id: str, severity: str | None = None) -> list[Finding]:
-        stmt = select(Finding).where(Finding.scan_id == scan_id)
+    async def list_findings(
+        self, scan_id: str | None = None, severity: str | None = None
+    ) -> list[Finding]:
+        stmt = select(Finding)
+        if scan_id:
+            stmt = stmt.where(Finding.scan_id == scan_id)
         if severity:
             stmt = stmt.where(Finding.severity == severity)
         result = await self.session.execute(stmt.order_by(Finding.severity, Finding.discovered_at.desc()))
         return list(result.scalars().all())
+
+    async def update_finding_status(self, finding_id: str, status: str | None) -> Finding | None:
+        f = await self.get_finding(finding_id)
+        if f and status:
+            f.status = status
+            await self.commit()
+        return f
 
     # Asset
     async def create_asset(self, scan_id: str, name: str, asset_type: str, **kwargs: Any) -> Asset:
@@ -109,6 +145,7 @@ class Repository:
         ar = await self.session.get(AgentResult, agent_result_id)
         if ar:
             for key, value in kwargs.items():
-                setattr(ar, key, value)
+                if value is not None:
+                    setattr(ar, key, value)
             await self.commit()
         return ar

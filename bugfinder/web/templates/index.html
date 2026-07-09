@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div x-data="dashboard()" x-init="init()">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-white">Dashboard</h1>
+        <p class="text-gray-400 mt-1">Overview of your security assessments</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        <div class="bg-gray-900 rounded-lg p-4 border border-gray-800">
+            <div class="text-sm text-gray-400">Projects</div>
+            <div class="text-2xl font-bold text-white" x-text="stats.total_projects">0</div>
+        </div>
+        <div class="bg-gray-900 rounded-lg p-4 border border-gray-800">
+            <div class="text-sm text-gray-400">Scans</div>
+            <div class="text-2xl font-bold text-white" x-text="stats.total_scans">0</div>
+        </div>
+        <div class="bg-gray-900 rounded-lg p-4 border border-gray-800">
+            <div class="text-sm text-gray-400">Findings</div>
+            <div class="text-2xl font-bold text-white" x-text="stats.total_findings">0</div>
+        </div>
+        <div class="bg-gray-900 rounded-lg p-4 border border-red-900">
+            <div class="text-sm text-red-400">Critical</div>
+            <div class="text-2xl font-bold text-red-500" x-text="stats.critical_findings">0</div>
+        </div>
+        <div class="bg-gray-900 rounded-lg p-4 border border-orange-900">
+            <div class="text-sm text-orange-400">High</div>
+            <div class="text-2xl font-bold text-orange-500" x-text="stats.high_findings">0</div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <div class="bg-gray-900 rounded-lg border border-gray-800 p-6">
+            <h2 class="text-lg font-semibold text-white mb-4">Start New Scan</h2>
+            <form hx-post="/api/scans" hx-target="#scan-result" hx-swap="innerHTML" class="space-y-4">
+                <div>
+                    <label class="block text-sm text-gray-400 mb-1">Target</label>
+                    <input type="text" name="target" required placeholder="https://example.com or app.apk" class="w-full bg-gray-800 text-white rounded px-3 py-2 border border-gray-700 focus:border-emerald-500 focus:outline-none">
+                </div>
+                <div class="flex gap-4">
+                    <div class="flex-1">
+                        <label class="block text-sm text-gray-400 mb-1">Profile</label>
+                        <select name="profile" class="w-full bg-gray-800 text-white rounded px-3 py-2 border border-gray-700 focus:border-emerald-500 focus:outline-none">
+                            <option value="quick">Quick</option>
+                            <option value="deep" selected>Deep</option>
+                            <option value="expert">Expert</option>
+                        </select>
+                    </div>
+                    <div class="flex-1">
+                        <label class="block text-sm text-gray-400 mb-1">Project (optional)</label>
+                        <select name="project_id" class="w-full bg-gray-800 text-white rounded px-3 py-2 border border-gray-700 focus:border-emerald-500 focus:outline-none">
+                            <option value="">None</option>
+                            <template x-for="p in projects" :key="p.id">
+                                <option :value="p.id" x-text="p.name"></option>
+                            </template>
+                        </select>
+                    </div>
+                </div>
+                <button type="submit" class="bg-emerald-600 text-white px-6 py-2 rounded font-medium hover:bg-emerald-700 transition">Start Scan</button>
+            </form>
+            <div id="scan-result" class="mt-4"></div>
+        </div>
+
+        <div class="bg-gray-900 rounded-lg border border-gray-800 p-6">
+            <h2 class="text-lg font-semibold text-white mb-4">Recent Scans</h2>
+            <div class="space-y-3">
+                <template x-for="scan in stats.recent_scans" :key="scan.id">
+                    <a :href="'/scans/' + scan.id" class="block bg-gray-800 rounded p-3 hover:bg-gray-750 transition">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <div class="text-white font-medium" x-text="scan.target"></div>
+                                <div class="text-sm text-gray-400" x-text="scan.target_type"></div>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xs px-2 py-1 rounded" :class="{
+                                    'bg-green-900 text-green-400': scan.status === 'completed',
+                                    'bg-yellow-900 text-yellow-400': scan.status === 'running',
+                                    'bg-red-900 text-red-400': scan.status === 'failed',
+                                    'bg-gray-800 text-gray-400': scan.status === 'pending'
+                                }" x-text="scan.status"></span>
+                                <div class="text-sm text-gray-400 mt-1" x-text="scan.findings_count + ' findings'"></div>
+                            </div>
+                        </div>
+                    </a>
+                </template>
+                <div x-show="stats.recent_scans.length === 0" class="text-gray-500 text-center py-4">No scans yet</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function dashboard() {
+    return {
+        stats: { total_projects: 0, total_scans: 0, total_findings: 0, critical_findings: 0, high_findings: 0, medium_findings: 0, low_findings: 0, info_findings: 0, scans_by_status: {}, recent_scans: [] },
+        projects: [],
+        async init() {
+            const [statsRes, projectsRes] = await Promise.all([
+                fetch('/api/dashboard/stats'),
+                fetch('/api/projects')
+            ]);
+            if (statsRes.ok) this.stats = await statsRes.json();
+            if (projectsRes.ok) this.projects = await projectsRes.json();
+        }
+    }
+}
+</script>
+{% endblock %}

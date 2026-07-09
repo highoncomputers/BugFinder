@@ -1,6 +1,6 @@
 [project]
 name = "bugfinder"
-version = "0.1.0"
+version = "0.2.0"
 description = "AI-powered autonomous bug bounty assistant and security assessment platform"
 readme = "README.md"
 license = { text = "MIT" }
@@ -10,8 +10,9 @@ authors = [
 ]
 keywords = ["security", "bug-bounty", "penetration-testing", "vulnerability-scanner", "ai"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Environment :: Console",
+    "Environment :: Web Environment",
     "Intended Audience :: Developers",
     "Intended Audience :: Information Technology",
     "License :: OSI Approved :: MIT License",
@@ -42,6 +43,12 @@ dependencies = [
     "platformdirs>=4.3.0",
     "orjson>=3.10.0",
     "structlog>=24.4.0",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.34.0",
+    "python-multipart>=0.0.18",
+    "itsdangerous>=2.2.0",
+    "apscheduler>=3.11.0",
+    "aiofiles>=24.1.0",
 ]
 
 [project.optional-dependencies]
@@ -56,6 +63,13 @@ dev = [
     "sphinx>=8.0.0",
     "sphinx-rtd-theme>=3.0.0",
 ]
+web = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.34.0",
+    "python-multipart>=0.0.18",
+    "itsdangerous>=2.2.0",
+    "aiofiles>=24.1.0",
+]
 postgres = [
     "psycopg2-binary>=2.9.0",
     "asyncpg>=0.30.0",
@@ -66,9 +80,21 @@ pdf = [
 android = [
     "androguard>=3.4.0",
 ]
+notifications = [
+    "email-validator>=2.2.0",
+    "httpx>=0.28.0",
+]
+celery = [
+    "celery>=5.4.0",
+    "redis>=5.2.0",
+]
+all = [
+    "bugfinder[web,postgres,pdf,android,notifications,celery]",
+]
 
 [project.scripts]
 bf = "bugfinder.cli.commands:app"
+bf-web = "bugfinder.web.app:main"
 
 [project.entry-points."bugfinder.plugins"]
 example = "bugfinder.plugins.example"
@@ -83,12 +109,17 @@ packages = ["bugfinder"]
 [tool.hatch.build.targets.sdist]
 include = ["bugfinder/", "tests/"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"bugfinder/web/static" = "bugfinder/web/static"
+"bugfinder/web/templates" = "bugfinder/web/templates"
+
 [tool.ruff]
-line-length = 120
+line-length = 130
 target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP"]
+ignore = ["E501"]
 
 [tool.mypy]
 python_version = "3.12"
@@ -99,3 +130,8 @@ warn_unused_ignores = true
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "web: marks tests requiring web server",
+    "integration: marks integration tests",
+]
