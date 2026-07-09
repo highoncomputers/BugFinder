@@ -1,19 +1,54 @@
 {% extends "base.html" %}
 {% block title %}Login{% endblock %}
+{% block extra_head %}
+<style>
+.login-error {
+    background: rgba(248, 81, 73, 0.1);
+    border: 1px solid rgba(248, 81, 73, 0.3);
+    color: #f85149;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    font-size: 0.8125rem;
+    display: none;
+}
+.login-error.show { display: block; }
+.login-success {
+    background: rgba(63, 185, 80, 0.1);
+    border: 1px solid rgba(63, 185, 80, 0.3);
+    color: #3fb950;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    font-size: 0.8125rem;
+    text-align: center;
+}
+</style>
+{% endblock %}
 {% block content %}
-<div class="flex items-center justify-center min-h-[60vh]">
-    <div class="bg-gray-900 rounded-lg border border-gray-800 p-8 w-full max-w-md" x-data="loginForm()">
-        <h1 class="text-2xl font-bold text-white mb-6 text-center">Login to BugFinder</h1>
+<div class="login-container">
+    <div class="login-card animate-in" x-data="loginForm()">
+        <div class="login-logo">
+            <div class="login-logo-icon">🔍</div>
+            <h1>Welcome to BugFinder</h1>
+            <p>AI-powered autonomous bug bounty assistant</p>
+        </div>
 
         <form @submit.prevent="login" class="space-y-4">
-            <div>
-                <label class="block text-sm text-gray-400 mb-1">API Key</label>
-                <input type="password" x-model="apiKey" required placeholder="Enter your NVIDIA API key or BF API key" class="w-full bg-gray-800 text-white rounded px-3 py-2 border border-gray-700 focus:border-emerald-500 focus:outline-none">
+            <div class="form-group">
+                <label class="form-label">API Key</label>
+                <input type="password" x-model="apiKey" required placeholder="Enter your API key to get started" class="input font-mono">
             </div>
-            <button type="submit" class="w-full bg-emerald-600 text-white px-4 py-2 rounded font-medium hover:bg-emerald-700 transition" x-text="loading ? 'Logging in...' : 'Login'"></button>
-            <p x-show="error" class="text-red-400 text-sm text-center" x-text="error"></p>
-            <p x-show="success" class="text-green-400 text-sm text-center">Login successful! Redirecting...</p>
+            <button type="submit" class="btn btn-primary btn-lg w-full" :disabled="loading" x-text="loading ? 'Authenticating...' : 'Sign in'"></button>
+
+            <div class="login-error" :class="{ show: error }" x-text="error"></div>
+            <div x-show="success" class="login-success">
+                ✓ Authentication successful! Redirecting...
+            </div>
         </form>
+
+        <p class="text-muted text-sm text-center mt-6">
+            First time? Enter any valid API key to set up your configuration.
+            <br>Keys are stored locally in <code>.env</code>.
+        </p>
     </div>
 </div>
 
@@ -35,12 +70,13 @@ function loginForm() {
                 });
                 if (res.ok) {
                     this.success = true;
-                    setTimeout(() => window.location.href = '/', 1000);
+                    setTimeout(() => window.location.href = '/', 1200);
                 } else {
-                    this.error = 'Invalid API key';
+                    const data = await res.json();
+                    this.error = data.detail || 'Invalid API key';
                 }
             } catch (e) {
-                this.error = 'Connection error';
+                this.error = 'Connection error — is the server running?';
             }
             this.loading = false;
         }

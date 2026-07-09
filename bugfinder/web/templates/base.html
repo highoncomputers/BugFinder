@@ -1,57 +1,49 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-gray-950">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BugFinder - {% block title %}Dashboard{% endblock %}</title>
+    <title>BugFinder — {% block title %}Dashboard{% endblock %}</title>
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <script src="https://unpkg.com/alpinejs@3.14.8" defer></script>
     <link rel="stylesheet" href="/static/css/app.css">
     {% block extra_head %}{% endblock %}
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
 </head>
-<body class="h-full">
-    <div class="min-h-full flex flex-col">
-        <nav class="bg-gray-900 border-b border-gray-800" x-data="{ open: false }">
-            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                <div class="flex h-16 items-center justify-between">
-                    <div class="flex items-center">
-                        <a href="/" class="text-xl font-bold text-emerald-400">BugFinder</a>
-                        <div class="ml-10 hidden md:block">
-                            <div class="flex items-center space-x-4">
-                                <a href="/" class="text-gray-300 hover:text-emerald-400 px-3 py-2 rounded text-sm font-medium">Dashboard</a>
-                                <a href="/scans" class="text-gray-300 hover:text-emerald-400 px-3 py-2 rounded text-sm font-medium">Scans</a>
-                                <a href="/findings" class="text-gray-300 hover:text-emerald-400 px-3 py-2 rounded text-sm font-medium">Findings</a>
-                                <a href="/projects" class="text-gray-300 hover:text-emerald-400 px-3 py-2 rounded text-sm font-medium">Projects</a>
-                                <a href="/learn" class="text-gray-300 hover:text-emerald-400 px-3 py-2 rounded text-sm font-medium">Learn</a>
-                                <a href="/plugins" class="text-gray-300 hover:text-emerald-400 px-3 py-2 rounded text-sm font-medium">Plugins</a>
-                                <a href="/teams" class="text-gray-300 hover:text-emerald-400 px-3 py-2 rounded text-sm font-medium">Teams</a>
-                                <a href="/exports" class="text-gray-300 hover:text-emerald-400 px-3 py-2 rounded text-sm font-medium">Exports</a>
-                                <a href="/proxy" class="text-gray-300 hover:text-emerald-400 px-3 py-2 rounded text-sm font-medium">Proxy</a>
-                                <a href="/graph" class="text-gray-300 hover:text-emerald-400 px-3 py-2 rounded text-sm font-medium">Graph</a>
-                                <a href="/chat" class="text-gray-300 hover:text-emerald-400 px-3 py-2 rounded text-sm font-medium">AI Co-pilot</a>
-                                <a href="/settings" class="text-gray-300 hover:text-emerald-400 px-3 py-2 rounded text-sm font-medium">Settings</a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="flex items-center">
-                        <span class="text-xs text-gray-500 mr-4">v{{ version }}</span>
-                        <a href="/login" class="text-gray-300 hover:text-emerald-400 px-3 py-2 rounded text-sm font-medium">Login</a>
-                    </div>
+<body>
+    <div class="app-layout">
+        <nav class="navbar">
+            <div class="navbar-inner">
+                <a href="/" class="navbar-brand">
+                    <span>BugFinder</span>
+                </a>
+                <div class="navbar-links">
+                    <a href="/">Dashboard</a>
+                    <a href="/scans">Scans</a>
+                    <a href="/findings">Findings</a>
+                    <a href="/projects">Projects</a>
+                    <a href="/learn">Learn</a>
+                    <a href="/plugins">Plugins</a>
+                    <a href="/teams">Teams</a>
+                    <a href="/exports">Exports</a>
+                    <a href="/proxy">Proxy</a>
+                    <a href="/graph">Graph</a>
+                    <a href="/chat">AI Co-pilot</a>
+                    <a href="/settings">Settings</a>
+                </div>
+                <div class="navbar-end">
+                    <span class="navbar-version">v{{ version }}</span>
+                    <a href="/login" class="btn btn-sm btn-secondary">Login</a>
                 </div>
             </div>
         </nav>
 
-        <main class="flex-1">
-            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-                {% block content %}{% endblock %}
-            </div>
+        <main class="app-main">
+            {% block content %}{% endblock %}
         </main>
 
-        <footer class="bg-gray-900 border-t border-gray-800 py-4">
-            <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center text-sm text-gray-500">
-                BugFinder v{{ version }} &mdash; AI-powered bug bounty assistant
-            </div>
+        <footer class="footer">
+            BugFinder v{{ version }} &mdash; AI-powered security assessment platform
         </footer>
     </div>
 </body>
