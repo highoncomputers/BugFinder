@@ -75,7 +75,7 @@ def create_app() -> FastAPI:
         return templates.TemplateResponse("scans.html", {"request": request, "version": __version__})
 
     @app.get("/scans/{scan_id}", response_class=HTMLResponse)
-    async def scan_detail(request: Request, scan_id: int):
+    async def scan_detail(request: Request, scan_id: str):
         return templates.TemplateResponse("scan_detail.html", {"request": request, "scan_id": scan_id, "version": __version__})
 
     @app.get("/findings", response_class=HTMLResponse)
@@ -83,7 +83,7 @@ def create_app() -> FastAPI:
         return templates.TemplateResponse("findings.html", {"request": request, "version": __version__})
 
     @app.get("/findings/{finding_id}", response_class=HTMLResponse)
-    async def finding_detail(request: Request, finding_id: int):
+    async def finding_detail(request: Request, finding_id: str):
         return templates.TemplateResponse("finding_detail.html", {"request": request, "finding_id": finding_id, "version": __version__})
 
     @app.get("/projects", response_class=HTMLResponse)
@@ -121,6 +121,12 @@ def create_app() -> FastAPI:
     @app.get("/settings", response_class=HTMLResponse)
     async def settings_page(request: Request):
         return templates.TemplateResponse("settings.html", {"request": request, "version": __version__})
+
+    @app.get("/favicon.ico")
+    async def favicon():
+        from fastapi.responses import Response
+        svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🔍</text></svg>'
+        return Response(content=svg, media_type="image/svg+xml")
 
     @app.get("/login", response_class=HTMLResponse)
     async def login_page(request: Request):
