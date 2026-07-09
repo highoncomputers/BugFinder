@@ -2,68 +2,86 @@
 {% block title %}Scan {{ scan_id }}{% endblock %}
 {% block content %}
 <div x-data="scanDetail({{ scan_id }})" x-init="init()">
-    <div class="mb-8">
-        <a href="/scans" class="text-emerald-400 hover:text-emerald-300 text-sm">&larr; Back to Scans</a>
-        <h1 class="text-3xl font-bold text-white mt-2" x-text="scan ? scan.target : 'Loading...'"></h1>
+    <div class="mb-6">
+        <a href="/scans" class="text-muted text-sm hover:text-white transition">&larr; Back to Scans</a>
+        <h1 class="page-title mt-2" x-text="scan ? scan.target : 'Loading...'"></h1>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
-        <div class="bg-gray-900 rounded-lg p-4 border border-gray-800">
-            <div class="text-sm text-gray-400">Status</div>
-            <div class="text-lg font-semibold" :class="{
-                'text-green-400': scan?.status === 'completed',
-                'text-yellow-400': scan?.status === 'running',
-                'text-red-400': scan?.status === 'failed',
-                'text-gray-400': scan?.status === 'pending'
-            }" x-text="scan?.status"></div>
-        </div>
-        <div class="bg-gray-900 rounded-lg p-4 border border-gray-800">
-            <div class="text-sm text-gray-400">Type</div>
-            <div class="text-lg font-semibold text-white" x-text="scan?.target_type"></div>
-        </div>
-        <div class="bg-gray-900 rounded-lg p-4 border border-gray-800">
-            <div class="text-sm text-gray-400">Progress</div>
-            <div class="flex items-center gap-2">
-                <div class="flex-1 bg-gray-800 rounded-full h-2">
-                    <div class="bg-emerald-500 h-2 rounded-full" :style="'width: ' + (scan?.progress || 0) + '%'"></div>
-                </div>
-                <span class="text-white text-sm" x-text="Math.round(scan?.progress || 0) + '%'"></span>
+    <div class="stat-grid mb-6">
+        <div class="stat-card">
+            <div class="stat-label">Status</div>
+            <div class="flex items-center gap-2 mt-2">
+                <span class="status-dot" :class="{ inactive: scan?.status !== 'running', error: scan?.status === 'failed' }"></span>
+                <span class="text-sm font-semibold" :class="{
+                    'text-white': scan?.status === 'completed',
+                    'text-yellow-400': scan?.status === 'running',
+                    'text-red-400': scan?.status === 'failed',
+                    'text-muted': scan?.status === 'pending'
+                }" x-text="scan?.status || 'pending'"></span>
             </div>
         </div>
-        <div class="bg-gray-900 rounded-lg p-4 border border-gray-800">
-            <div class="text-sm text-gray-400">Findings</div>
-            <div class="text-lg font-semibold text-white" x-text="findings.length"></div>
+        <div class="stat-card">
+            <div class="stat-label">Type</div>
+            <div class="text-sm font-semibold text-white mt-2" x-text="scan?.target_type"></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Progress</div>
+            <div class="mt-2">
+                <div class="progress-bar">
+                    <div class="progress-bar-fill" :style="'width: ' + (scan?.progress || 0) + '%'"></div>
+                </div>
+                <span class="text-xs text-muted mt-1 block" x-text="Math.round(scan?.progress || 0) + '%'"></span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Findings</div>
+            <div class="text-sm font-semibold text-white mt-2" x-text="findings.length"></div>
         </div>
     </div>
 
-    <div class="bg-gray-900 rounded-lg border border-gray-800 p-6 mb-8">
-        <h2 class="text-lg font-semibold text-white mb-4">Findings</h2>
-        <div class="space-y-3">
+    <div class="card mb-6" x-show="scan?.status === 'running'">
+        <div class="card-header">
+            <h2 class="card-title">Live Log</h2>
+            <span class="status-dot animate-pulse"></span>
+        </div>
+        <div class="bg-gray-950 rounded p-4 font-mono text-xs text-muted" style="max-height: 200px; overflow-y: auto;" x-ref="log">
+            <template x-for="line in log" :key="line.time">
+                <div class="py-0.5" x-text="line.msg"></div>
+            </template>
+            <div x-show="log.length === 0" class="text-muted">Waiting for scan to start...</div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Findings</h2>
+            <span class="text-xs text-muted" x-text="findings.length + ' total'"></span>
+        </div>
+        <div class="space-y-2">
             <template x-for="f in findings" :key="f.id">
-                <a :href="'/findings/' + f.id" class="block bg-gray-800 rounded p-4 hover:bg-gray-750 transition">
+                <a :href="'/findings/' + f.id" class="card card-clickable block">
                     <div class="flex justify-between items-start">
                         <div class="flex-1">
-                            <div class="text-white font-medium" x-text="f.title"></div>
-                            <div class="text-sm text-gray-400 mt-1" x-text="f.description"></div>
+                            <div class="text-sm font-medium text-white" x-text="f.title"></div>
+                            <div class="text-xs text-muted mt-0.5 truncate" x-text="f.description"></div>
                         </div>
-                        <div class="flex gap-2 ml-4">
-                            <span class="text-xs px-2 py-1 rounded font-medium" :class="{
-                                'bg-red-900 text-red-400': f.severity === 'critical',
-                                'bg-orange-900 text-orange-400': f.severity === 'high',
-                                'bg-yellow-900 text-yellow-400': f.severity === 'medium',
-                                'bg-blue-900 text-blue-400': f.severity === 'low',
-                                'bg-gray-800 text-gray-400': f.severity === 'info'
+                        <div class="flex gap-2 ml-4 items-center">
+                            <span class="badge" :class="{
+                                'badge-critical': f.severity === 'critical',
+                                'badge-high': f.severity === 'high',
+                                'badge-medium': f.severity === 'medium',
+                                'badge-low': f.severity === 'low',
+                                'badge-info': f.severity === 'info'
                             }" x-text="f.severity"></span>
-                            <span class="text-xs px-2 py-1 rounded" :class="{
-                                'bg-green-900 text-green-400': f.confidence === 'high',
-                                'bg-yellow-900 text-yellow-400': f.confidence === 'medium',
-                                'bg-gray-800 text-gray-400': f.confidence === 'low'
-                            }" x-text="f.confidence"></span>
+                            <span class="badge badge-info" x-text="f.confidence"></span>
                         </div>
                     </div>
                 </a>
             </template>
-            <div x-show="findings.length === 0" class="text-gray-500 text-center py-8">No findings yet</div>
+            <div x-show="findings.length === 0" class="empty-state">
+                <div class="empty-state-icon">🔍</div>
+                <p>No findings discovered yet.</p>
+            </div>
         </div>
     </div>
 </div>
@@ -73,13 +91,45 @@ function scanDetail(scanId) {
     return {
         scan: null,
         findings: [],
+        log: [],
+        pollTimer: null,
         async init() {
+            await this.loadData();
+            if (this.scan && (this.scan.status === 'running' || this.scan.status === 'pending')) {
+                this.startPolling();
+            }
+        },
+        async loadData() {
             const [scanRes, findingsRes] = await Promise.all([
                 fetch('/api/scans/' + scanId),
                 fetch('/api/findings?scan_id=' + scanId)
             ]);
             if (scanRes.ok) this.scan = await scanRes.json();
             if (findingsRes.ok) this.findings = await findingsRes.json();
+        },
+        startPolling() {
+            this.pollTimer = setInterval(async () => {
+                const [scanRes, findingsRes] = await Promise.all([
+                    fetch('/api/scans/' + scanId),
+                    fetch('/api/findings?scan_id=' + scanId)
+                ]);
+                if (scanRes.ok) {
+                    const updated = await scanRes.json();
+                    if (updated.status !== this.scan?.status || updated.progress !== this.scan?.progress) {
+                        this.log.push({ time: Date.now(), msg: '[' + updated.status + '] ' + (updated.current_step || 'running') + ' — ' + Math.round(updated.progress) + '%' });
+                    }
+                    this.scan = updated;
+                    if (updated.current_step) {
+                        this.log.push({ time: Date.now(), msg: '  step: ' + updated.current_step });
+                    }
+                }
+                if (findingsRes.ok) {
+                    this.findings = await findingsRes.json();
+                }
+                if (this.scan && !['running', 'pending'].includes(this.scan.status)) {
+                    clearInterval(this.pollTimer);
+                }
+            }, 2000);
         }
     }
 }

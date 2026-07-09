@@ -9,14 +9,13 @@ router = APIRouter()
 
 @router.get("", response_model=list[AgentResponse])
 async def list_agents(user: str = Depends(get_current_user)):
-    from bugfinder.core.registry import discover_agents
+    from bugfinder.core.registry import registry
 
-    agents = discover_agents()
+    registry.discover_agents()
+    agents = registry._agents
     result = []
     for name, cls in agents.items():
-        category = "unknown"
-        if hasattr(cls, "category"):
-            category = cls.category
+        category = getattr(cls, "category", "unknown")
         result.append(AgentResponse(
             name=name,
             category=category,

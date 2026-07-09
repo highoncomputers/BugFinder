@@ -2,11 +2,16 @@
 {% block title %}Findings{% endblock %}
 {% block content %}
 <div x-data="findingsPage()" x-init="init()">
-    <h1 class="text-3xl font-bold text-white mb-8">Findings</h1>
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Findings</h1>
+            <p class="page-subtitle">All discovered security findings</p>
+        </div>
+    </div>
 
-    <div class="bg-gray-900 rounded-lg border border-gray-800 p-6">
-        <div class="flex gap-3 mb-4 flex-wrap">
-            <select x-model="filterSeverity" class="bg-gray-800 text-white rounded px-3 py-1.5 text-sm border border-gray-700">
+    <div class="card p-0">
+        <div class="filter-bar">
+            <select x-model="filterSeverity" class="select" style="min-width: 140px;">
                 <option value="">All Severities</option>
                 <option value="critical">Critical</option>
                 <option value="high">High</option>
@@ -14,38 +19,42 @@
                 <option value="low">Low</option>
                 <option value="info">Info</option>
             </select>
-            <select x-model="filterStatus" class="bg-gray-800 text-white rounded px-3 py-1.5 text-sm border border-gray-700">
+            <select x-model="filterStatus" class="select" style="min-width: 140px;">
                 <option value="">All Status</option>
                 <option value="open">Open</option>
                 <option value="confirmed">Confirmed</option>
                 <option value="false_positive">False Positive</option>
                 <option value="fixed">Fixed</option>
             </select>
-            <span class="text-sm text-gray-400 self-center" x-text="filteredFindings.length + ' findings'"></span>
+            <span class="filter-count" x-text="filteredFindings.length + ' findings'"></span>
         </div>
 
-        <div class="space-y-2">
+        <div class="space-y-2 p-4">
             <template x-for="f in filteredFindings" :key="f.id">
-                <a :href="'/findings/' + f.id" class="block bg-gray-800 rounded p-4 hover:bg-gray-750 transition">
+                <a :href="'/findings/' + f.id" class="card card-clickable block">
                     <div class="flex justify-between items-start">
                         <div class="flex-1">
-                            <div class="text-white font-medium" x-text="f.title"></div>
-                            <div class="text-sm text-gray-400 mt-0.5" x-text="f.category"></div>
+                            <div class="text-sm font-medium text-white" x-text="f.title"></div>
+                            <div class="text-xs text-muted mt-0.5" x-text="f.category"></div>
                         </div>
                         <div class="flex gap-2 ml-4 items-center">
-                            <span class="text-xs px-2 py-1 rounded font-medium" :class="{
-                                'bg-red-900 text-red-400': f.severity === 'critical',
-                                'bg-orange-900 text-orange-400': f.severity === 'high',
-                                'bg-yellow-900 text-yellow-400': f.severity === 'medium',
-                                'bg-blue-900 text-blue-400': f.severity === 'low',
-                                'bg-gray-800 text-gray-400': f.severity === 'info'
+                            <span class="badge" :class="{
+                                'badge-critical': f.severity === 'critical',
+                                'badge-high': f.severity === 'high',
+                                'badge-medium': f.severity === 'medium',
+                                'badge-low': f.severity === 'low',
+                                'badge-info': f.severity === 'info'
                             }" x-text="f.severity"></span>
-                            <span class="text-xs text-gray-400" x-text="f.cwe_id ? 'CWE-' + f.cwe_id : ''"></span>
+                            <span class="text-xs text-muted font-mono" x-text="f.cwe_id ? 'CWE-' + f.cwe_id : ''"></span>
                         </div>
                     </div>
                 </a>
             </template>
-            <div x-show="filteredFindings.length === 0" class="text-gray-500 text-center py-8">No findings match your filters</div>
+            <div x-show="filteredFindings.length === 0" class="empty-state">
+                <div class="empty-state-icon">🔍</div>
+                <h3>No findings</h3>
+                <p>No findings match your filters.</p>
+            </div>
         </div>
     </div>
 </div>

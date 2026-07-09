@@ -186,6 +186,9 @@ class ScanOrchestrator:
         self.progress.status = "running"
 
         update_scan_progress(scan_id, {"status": "running", "progress": 0, "target": target})
+        async with async_session() as session:
+            repo = Repository(session)
+            await repo.update_scan(scan_id, status="running", progress=0.0)
 
         if self.ai_client and settings.ai_enabled:
             planner = AIPlanner(self.kg, self.ai_client, self.repo)
