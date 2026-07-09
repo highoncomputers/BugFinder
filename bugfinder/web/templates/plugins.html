@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}Plugins{% endblock %}
+{% block content %}
+<div x-data="pluginsApp()" x-init="init()">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-white">Plugins</h1>
+        <p class="text-gray-400 mt-1">Extend BugFinder with community plugins</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-2 space-y-6">
+            <div class="bg-gray-900 rounded-lg border border-gray-800 p-6">
+                <h2 class="text-lg font-semibold text-white mb-4">Installed Plugins</h2>
+                <template x-if="installed.length === 0">
+                    <div class="text-gray-500 text-sm text-center py-8">No plugins installed. Install from URL or load from disk.</div>
+                </template>
+                <div class="space-y-3">
+                    <template x-for="plugin in installed" :key="plugin.name">
+                        <div class="bg-gray-800 rounded p-4 flex justify-between items-start">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <h3 class="text-white font-medium" x-text="plugin.name"></h3>
+                                    <span class="text-xs text-gray-500" x-text="'v' + plugin.version"></span>
+                                    <span class="text-xs px-1.5 py-0.5 rounded" :class="{
+                                        'bg-emerald-900 text-emerald-400': plugin.type === 'builtin',
+                                        'bg-blue-900 text-blue-400': plugin.type === 'directory',
+                                        'bg-purple-900 text-purple-400': plugin.type === 'entry_point'
+                                    }" x-text="plugin.type"></span>
+                                </div>
+                                <p class="text-sm text-gray-400 mt-1" x-text="plugin.description || 'No description'"></p>
+                                <template x-if="plugin.hooks.length > 0">
+                                    <div class="flex gap-1 mt-2 flex-wrap">
+                                        <template x-for="hook in plugin.hooks">
+                                            <span class="text-xs bg-gray-700 text-gray-300 px-1.5 py-0.5 rounded" x-text="hook"></span>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+                            <button @click="removePlugin(plugin.name)" class="text-xs text-red-400 hover:text-red-300 ml-4 flex-shrink-0">Remove</button>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <div class="bg-gray-900 rounded-lg border border-gray-800 p-6">
+                <h2 class="text-lg font-semibold text-white mb-4">Install from URL</h2>
+                <form @submit.prevent="install()" class="space-y-3">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Plugin Name</label>
+                            <input type="text" x-model="installForm.name" required placeholder="my-plugin" class="w-full bg-gray-800 text-white rounded px-3 py-2 border border-gray-700 focus:border-emerald-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-gray-400 mb-1">Source URL</label>
+                            <input type="url" x-model="installForm.source" required placeholder="https://raw.githubusercontent.com/..." class="w-full bg-gray-800 text-white rounded px-3 py-2 border border-gray-700 focus:border-emerald-500 focus:outline-none">
+                        </div>
+                    </div>
+                    <button type="submit" :disabled="installing" class="bg-emerald-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-emerald-700 disabled:opacity-50">
+                        <span x-show="!installing">Install Plugin</span>
+                        <span x-show="installing">Installing...</span>
+                    </button>
+                    <div x-show="installMessage" class="text-sm" :class="installMessageType" x-text="installMessage"></div>
+                </form>
+            </div>
+
+            <div class="bg-gray-900 rounded-lg border border-gray-800 p-6">
+                <h2 class="text-lg font-semibold text-white mb-4">Available Plugins</h2>
+                <div class="space-y-3">
+                    <template x-for="bp in builtinPlugins" :key="bp.name">
+                        <div class="bg-gray-800 rounded p-4 flex justify-between items-start">
+                            <div>
+                                <h3 class="text-white font-medium" x-text="bp.name"></h3>
+                                <p class="text-sm text-gray-400 mt-1" x-text="bp.description"></p>
+                                <code class="text-xs text-gray-600 mt-1 block" x-text="bp.source"></code>
+                            </div>
+                            <button @click="quickInstall(bp)" class="text-xs bg-emerald-700 text-white px-3 py-1.5 rounded hover:bg-emerald-600 ml-4 flex-shrink-0">Install</button>
+                        </div>
+                    </template>
+                    <template x-if="builtinPlugins.length === 0">
+                        <div class="text-gray-500 text-sm text-center py-4">No additional plugins available</div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-4">
+            <div class="bg-gray-900 rounded-lg border border-gray-800 p-6 sticky top-4">
+                <h2 class="text-sm font-semibold text-white mb-3">Plugin SDK</h2>
+                <div class="text-xs text-gray-400 space-y-2 leading-relaxed">
+                    <p>Create plugins using the BugFinder Plugin SDK:</p>
+                    <pre class="bg-gray-950 text-green-300 p-3 rounded text-xs font-mono overflow-x-auto">from bugfinder.plugins.sdk import (
+    PluginBase,
+    pre_scan, post_scan,
+    on_finding, on_report,
+)
+
+class MyPlugin(PluginBase):
+    name = "my-plugin"
+    version = "1.0.0"
+    description = "My custom plugin"
+
+    def register(self, registry):
+        registry.register_plugin(self.name, self)
+
+@on_finding
+def log_finding(finding):
+    print(f"Found: {finding.title}")</pre>
+                    <p class="mt-2">Save as <code class="text-emerald-400">~/.config/bugfinder/plugins/&lt;name&gt;.py</code></p>
+                </div>
+            </div>
+
+            <div class="bg-gray-900 rounded-lg border border-gray-800 p-6">
+                <h2 class="text-sm font-semibold text-white mb-3">Plugin Directory</h2>
+                <div class="text-xs text-gray-400">
+                    <p>Plugins directory:</p>
+                    <code class="text-emerald-400 block mt-1 break-all" x-text="pluginsDir"></code>
+                    <p class="mt-2">Drop <code>.py</code> files here and reload.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function pluginsApp() {
+    return {
+        installed: [],
+        builtinPlugins: [],
+        installForm: { name: '', source: '' },
+        installing: false,
+        installMessage: '',
+        installMessageType: '',
+        pluginsDir: '',
+
+        async init() {
+            await this.loadPlugins();
+            await this.loadBuiltinPlugins();
+            await this.loadPluginsDir();
+        },
+
+        async loadPlugins() {
+            const res = await fetch('/api/plugins');
+            if (res.ok) this.installed = await res.json();
+        },
+
+        async loadBuiltinPlugins() {
+            const res = await fetch('/api/plugins/builtin/list');
+            if (res.ok) this.builtinPlugins = await res.json();
+        },
+
+        async loadPluginsDir() {
+            const res = await fetch('/api/config');
+            if (res.ok) {
+                const data = await res.json();
+                this.pluginsDir = data.config?.plugins_dir || '~/.config/bugfinder/plugins';
+            }
+        },
+
+        async install() {
+            if (!this.installForm.name || !this.installForm.source) return;
+            this.installing = true;
+            this.installMessage = '';
+            try {
+                const res = await fetch('/api/plugins/install', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(this.installForm)
+                });
+                if (res.ok) {
+                    this.installMessage = `Plugin "${this.installForm.name}" installed successfully`;
+                    this.installMessageType = 'text-emerald-400';
+                    this.installForm = { name: '', source: '' };
+                    await this.loadPlugins();
+                } else {
+                    const err = await res.text();
+                    this.installMessage = 'Install failed: ' + err;
+                    this.installMessageType = 'text-red-400';
+                }
+            } catch (e) {
+                this.installMessage = 'Error: ' + e.message;
+                this.installMessageType = 'text-red-400';
+            } finally {
+                this.installing = false;
+                setTimeout(() => this.installMessage = '', 5000);
+            }
+        },
+
+        async quickInstall(bp) {
+            this.installForm = { name: bp.name, source: bp.source };
+            await this.install();
+        },
+
+        async removePlugin(name) {
+            if (!confirm(`Remove plugin "${name}"?`)) return;
+            const res = await fetch('/api/plugins/' + name, { method: 'DELETE' });
+            if (res.ok) {
+                await this.loadPlugins();
+            }
+        }
+    }
+}
+</script>
+{% endblock %}

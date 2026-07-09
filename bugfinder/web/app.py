@@ -90,6 +90,38 @@ def create_app() -> FastAPI:
     async def projects_page(request: Request):
         return templates.TemplateResponse("projects.html", {"request": request, "version": __version__})
 
+    @app.get("/learn", response_class=HTMLResponse)
+    async def learn_page(request: Request):
+        return templates.TemplateResponse("learn.html", {"request": request, "version": __version__})
+
+    @app.get("/exports", response_class=HTMLResponse)
+    async def exports_page(request: Request):
+        return templates.TemplateResponse("exports.html", {"request": request, "version": __version__})
+
+    @app.get("/plugins", response_class=HTMLResponse)
+    async def plugins_page(request: Request):
+        return templates.TemplateResponse("plugins.html", {"request": request, "version": __version__})
+
+    @app.get("/teams", response_class=HTMLResponse)
+    async def teams_page(request: Request):
+        return templates.TemplateResponse("teams.html", {"request": request, "version": __version__})
+
+    @app.get("/proxy", response_class=HTMLResponse)
+    async def proxy_page(request: Request):
+        return templates.TemplateResponse("proxy.html", {"request": request, "version": __version__})
+
+    @app.get("/graph", response_class=HTMLResponse)
+    async def graph_page(request: Request):
+        return templates.TemplateResponse("graph.html", {"request": request, "version": __version__})
+
+    @app.get("/chat", response_class=HTMLResponse)
+    async def chat_page(request: Request):
+        return templates.TemplateResponse("chat.html", {"request": request, "version": __version__})
+
+    @app.get("/settings", response_class=HTMLResponse)
+    async def settings_page(request: Request):
+        return templates.TemplateResponse("settings.html", {"request": request, "version": __version__})
+
     @app.get("/login", response_class=HTMLResponse)
     async def login_page(request: Request):
         return templates.TemplateResponse("login.html", {"request": request, "version": __version__})

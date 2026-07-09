@@ -21,8 +21,57 @@
                 </div>
 
                 <div class="bg-gray-900 rounded-lg border border-gray-800 p-6" x-show="finding.remediation">
-                    <h2 class="text-lg font-semibold text-white mb-3">Remediation</h2>
+                    <h2 class="text-lg font-semibold text-white mb-3">Existing Remediation</h2>
                     <p class="text-gray-300 leading-relaxed" x-text="finding.remediation"></p>
+                </div>
+
+                <div class="bg-gray-900 rounded-lg border border-gray-800 p-6">
+                    <h2 class="text-lg font-semibold text-white mb-3">Auto-Fix Suggestions</h2>
+                    <div id="auto-fix-content">
+                        <button @click="loadAutoFix()" :disabled="autoFixLoading" class="bg-emerald-600 text-white px-4 py-1.5 rounded text-sm hover:bg-emerald-700 disabled:opacity-50">
+                            <span x-show="!autoFixLoading">Generate Fixes</span>
+                            <span x-show="autoFixLoading">Loading...</span>
+                        </button>
+                    </div>
+                    <template x-if="autoFixes.length > 0">
+                        <div class="mt-4 space-y-4">
+                            <template x-for="(fix, i) in autoFixes" :key="i">
+                                <div>
+                                    <h3 class="text-sm font-medium text-emerald-400 mb-1" x-text="fix.title"></h3>
+                                    <p class="text-xs text-gray-400 mb-2" x-text="fix.description"></p>
+
+                                    <template x-for="(cf, j) in fix.code_fixes" :key="'code-' + j">
+                                        <div class="mb-2">
+                                            <div class="flex justify-between items-center mb-1">
+                                                <span class="text-xs text-gray-500" x-text="cf.label"></span>
+                                                <span class="text-xs text-gray-600 font-mono" x-text="cf.language"></span>
+                                            </div>
+                                            <pre class="bg-gray-950 text-green-300 p-3 rounded text-xs font-mono overflow-x-auto" x-text="cf.code"></pre>
+                                        </div>
+                                    </template>
+
+                                    <template x-for="(cfg, j) in fix.config_fixes" :key="'cfg-' + j">
+                                        <div class="mb-2">
+                                            <div class="flex justify-between items-center mb-1">
+                                                <span class="text-xs text-gray-500" x-text="cfg.title"></span>
+                                                <span class="text-xs text-gray-600">config</span>
+                                            </div>
+                                            <pre class="bg-gray-950 text-blue-300 p-3 rounded text-xs font-mono overflow-x-auto" x-text="cfg.code"></pre>
+                                        </div>
+                                    </template>
+
+                                    <template x-if="fix.references.length > 0">
+                                        <div class="mt-1">
+                                            <span class="text-xs text-gray-500">References:</span>
+                                            <template x-for="ref in fix.references">
+                                                <a :href="ref" target="_blank" class="text-xs text-blue-400 hover:text-blue-300 ml-2" x-text="ref.split('/').slice(-2).join('/')"></a>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
                 </div>
             </div>
 
@@ -71,6 +120,39 @@
                         <button @click="updateStatus('fixed')" class="w-full bg-blue-700 text-white px-3 py-1.5 rounded text-sm hover:bg-blue-600">Mark Fixed</button>
                     </div>
                 </div>
+
+                <div class="bg-gray-900 rounded-lg border border-gray-800 p-4">
+                    <h3 class="text-sm text-gray-400 mb-3">Exploit & Verify</h3>
+                    <div id="exploit-panel">
+                        {% include "exploit_panel.html" %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="lg:col-span-3 mt-6">
+            <div class="bg-gray-900 rounded-lg border border-gray-800 p-6">
+                <h2 class="text-lg font-semibold text-white mb-4">Comments</h2>
+                <div class="space-y-3 mb-4">
+                    <template x-for="comment in comments" :key="comment.id">
+                        <div class="bg-gray-800 rounded p-3">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <span class="text-sm font-medium text-emerald-400" x-text="comment.author"></span>
+                                    <span class="text-xs text-gray-500 ml-2" x-text="comment.created_at"></span>
+                                </div>
+                            </div>
+                            <p class="text-sm text-gray-300 mt-1" x-text="comment.content"></p>
+                        </div>
+                    </template>
+                    <template x-if="comments.length === 0">
+                        <div class="text-gray-500 text-sm text-center py-4">No comments yet</div>
+                    </template>
+                </div>
+                <div class="flex gap-2">
+                    <textarea x-model="newComment" rows="2" placeholder="Add a comment..." class="flex-1 bg-gray-800 text-white rounded px-3 py-2 text-sm border border-gray-700 focus:border-emerald-500 focus:outline-none resize-none"></textarea>
+                    <button @click="addComment()" :disabled="!newComment.trim()" class="self-end bg-emerald-600 text-white px-4 py-2 rounded text-sm font-medium hover:bg-emerald-700 disabled:opacity-50">Comment</button>
+                </div>
             </div>
         </div>
     </template>
@@ -80,9 +162,12 @@
 function findingDetail(findingId) {
     return {
         finding: null,
+        autoFixes: [],
+        autoFixLoading: false,
         async init() {
             const res = await fetch('/api/findings/' + findingId);
             if (res.ok) this.finding = await res.json();
+            await this.loadComments();
         },
         async updateStatus(status) {
             const res = await fetch('/api/findings/' + findingId, {
@@ -92,6 +177,36 @@ function findingDetail(findingId) {
             });
             if (res.ok) {
                 this.finding = await res.json();
+            }
+        },
+        comments: [],
+        newComment: '',
+        async loadComments() {
+            const res = await fetch('/api/findings/' + findingId + '/comments');
+            if (res.ok) this.comments = await res.json();
+        },
+        async addComment() {
+            if (!this.newComment.trim()) return;
+            const res = await fetch('/api/findings/' + findingId + '/comments', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ content: this.newComment })
+            });
+            if (res.ok) {
+                this.newComment = '';
+                await this.loadComments();
+            }
+        },
+        async loadAutoFix() {
+            this.autoFixLoading = true;
+            try {
+                const res = await fetch('/api/remediation/' + findingId);
+                if (res.ok) {
+                    const data = await res.json();
+                    this.autoFixes = data.fixes;
+                }
+            } catch (_) {} finally {
+                this.autoFixLoading = false;
             }
         }
     }

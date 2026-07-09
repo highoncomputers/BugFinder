@@ -22,14 +22,21 @@ async def login(req: LoginRequest, response: Response):
     from bugfinder.core.config import Settings
 
     cfg = Settings()
-    if req.api_key == cfg.nvidia_api_key:
+    valid_keys = [
+        cfg.nvidia_api_key,
+        cfg.openai_api_key,
+        cfg.anthropic_api_key,
+        cfg.github_token,
+    ]
+    if any(k and req.api_key == k for k in valid_keys):
         token = create_session_token()
+        max_age = cfg.web_settings.web_session_expiry_hours * 3600 if hasattr(cfg, "web_settings") else 86400
         response.set_cookie(
             key="session",
             value=token,
             httponly=True,
             samesite="lax",
-            max_age=cfg.web_settings.web_session_expiry_hours * 3600 if hasattr(cfg, "web_settings") else 86400,
+            max_age=max_age,
         )
         return LoginResponse(success=True, token=token)
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")

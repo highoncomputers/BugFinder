@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}Exports{% endblock %}
+{% block content %}
+<div x-data="exportsApp()" x-init="init()">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-white">Exports & Integrations</h1>
+        <p class="text-gray-400 mt-1">Export findings to reports, bug bounty platforms, or issue trackers</p>
+    </div>
+
+    <div class="mb-6">
+        <label class="block text-sm text-gray-400 mb-2">Select Scan</label>
+        <select x-model="selectedScanId" class="w-full max-w-md bg-gray-800 text-white rounded px-3 py-2 border border-gray-700 focus:border-emerald-500 focus:outline-none">
+            <option value="">— Select a scan —</option>
+            <template x-for="s in scans" :key="s.id">
+                <option :value="s.id" x-text="s.target + ' (' + s.profile + ', ' + s.findings_count + ' findings)'"></option>
+            </template>
+        </select>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="bg-gray-900 rounded-lg border border-gray-800 p-5">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 rounded-lg bg-emerald-900 flex items-center justify-center text-lg">📄</div>
+                <div>
+                    <h3 class="text-white font-semibold">CSV Report</h3>
+                    <p class="text-xs text-gray-500">Export findings as spreadsheet</p>
+                </div>
+            </div>
+            <button @click="exportCSV()" :disabled="!selectedScanId" class="w-full bg-emerald-600 text-white px-3 py-2 rounded text-sm font-medium hover:bg-emerald-700 disabled:opacity-50">Download CSV</button>
+        </div>
+
+        <div class="bg-gray-900 rounded-lg border border-gray-800 p-5">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 rounded-lg bg-blue-900 flex items-center justify-center text-lg">🐛</div>
+                <div>
+                    <h3 class="text-white font-semibold">HackerOne</h3>
+                    <p class="text-xs text-gray-500">Export findings for HackerOne submission</p>
+                </div>
+            </div>
+            <button @click="exportHackerOne()" :disabled="!selectedScanId" class="w-full bg-blue-700 text-white px-3 py-2 rounded text-sm font-medium hover:bg-blue-600 disabled:opacity-50">Export JSON</button>
+        </div>
+
+        <div class="bg-gray-900 rounded-lg border border-gray-800 p-5">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 rounded-lg bg-purple-900 flex items-center justify-center text-lg">🎯</div>
+                <div>
+                    <h3 class="text-white font-semibold">Bugcrowd</h3>
+                    <p class="text-xs text-gray-500">Export findings for Bugcrowd submission</p>
+                </div>
+            </div>
+            <button @click="exportBugcrowd()" :disabled="!selectedScanId" class="w-full bg-purple-700 text-white px-3 py-2 rounded text-sm font-medium hover:bg-purple-600 disabled:opacity-50">Export JSON</button>
+        </div>
+
+        <div class="bg-gray-900 rounded-lg border border-gray-800 p-5">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 rounded-lg bg-orange-900 flex items-center justify-center text-lg">📋</div>
+                <div>
+                    <h3 class="text-white font-semibold">Jira</h3>
+                    <p class="text-xs text-gray-500">Create Jira issues from findings</p>
+                </div>
+            </div>
+            <button @click="exportJira()" :disabled="!selectedScanId" class="w-full bg-orange-700 text-white px-3 py-2 rounded text-sm font-medium hover:bg-orange-600 disabled:opacity-50">Export to Jira</button>
+        </div>
+    </div>
+
+    <div x-show="exportResult" class="mt-6 bg-gray-900 rounded-lg border border-gray-800 p-6">
+        <h2 class="text-lg font-semibold text-white mb-3">Export Result</h2>
+        <pre class="bg-gray-950 text-gray-300 p-4 rounded text-xs font-mono overflow-x-auto max-h-96" x-text="exportResult"></pre>
+    </div>
+</div>
+
+<script>
+function exportsApp() {
+    return {
+        scans: [],
+        selectedScanId: '',
+        exportResult: '',
+
+        async init() {
+            const res = await fetch('/api/scans');
+            if (res.ok) this.scans = await res.json();
+        },
+
+        exportCSV() {
+            if (!this.selectedScanId) return;
+            this.exportResult = '';
+            window.open('/api/exports/scan/' + this.selectedScanId + '/csv', '_blank');
+            this.exportResult = 'CSV download started';
+        },
+
+        async exportHackerOne() {
+            if (!this.selectedScanId) return;
+            this.exportResult = 'Loading...';
+            try {
+                const res = await fetch('/api/exports/scan/' + this.selectedScanId + '/hackerone');
+                if (res.ok) {
+                    const data = await res.json();
+                    this.exportResult = JSON.stringify(data, null, 2);
+                    this.downloadJSON(data, 'hackerone_export.json');
+                } else {
+                    this.exportResult = 'Error: ' + await res.text();
+                }
+            } catch (e) {
+                this.exportResult = 'Error: ' + e.message;
+            }
+        },
+
+        async exportBugcrowd() {
+            if (!this.selectedScanId) return;
+            this.exportResult = 'Loading...';
+            try {
+                const res = await fetch('/api/exports/scan/' + this.selectedScanId + '/bugcrowd');
+                if (res.ok) {
+                    const data = await res.json();
+                    this.exportResult = JSON.stringify(data, null, 2);
+                    this.downloadJSON(data, 'bugcrowd_export.json');
+                } else {
+                    this.exportResult = 'Error: ' + await res.text();
+                }
+            } catch (e) {
+                this.exportResult = 'Error: ' + e.message;
+            }
+        },
+
+        async exportJira() {
+            if (!this.selectedScanId) return;
+            this.exportResult = 'Loading findings...';
+            try {
+                const findingsRes = await fetch('/api/findings?scan_id=' + this.selectedScanId);
+                if (!findingsRes.ok) { this.exportResult = 'Failed to load findings'; return; }
+                const findings = await findingsRes.json();
+                const issues = findings.map(f => ({
+                    project_key: 'SEC',
+                    issue_type: 'Bug',
+                    summary: f.title,
+                    description: f.description + '\n\nSeverity: ' + f.severity + '\nCWE: ' + (f.cwe_id || 'N/A') + '\nCVSS: ' + (f.cvss_score || 'N/A'),
+                    priority: f.severity === 'critical' ? 'Highest' : f.severity === 'high' ? 'High' : 'Medium',
+                    labels: ['bugfinder', f.severity],
+                }));
+                this.exportResult = JSON.stringify(issues, null, 2) + '\n\n(POST to /api/exports/jira to create)';
+            } catch (e) {
+                this.exportResult = 'Error: ' + e.message;
+            }
+        },
+
+        downloadJSON(data, filename) {
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+    }
+}
+</script>
+{% endblock %}

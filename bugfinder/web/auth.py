@@ -50,7 +50,13 @@ async def get_current_user(request: Request) -> str:
         from bugfinder.core.config import Settings
 
         cfg = Settings()
-        if cfg.nvidia_api_key and api_key == cfg.nvidia_api_key:
+        valid_keys = [
+            cfg.nvidia_api_key,
+            cfg.openai_api_key,
+            cfg.anthropic_api_key,
+            cfg.github_token,
+        ]
+        if any(k and api_key == k for k in valid_keys):
             return "api-user"
 
     raise HTTPException(

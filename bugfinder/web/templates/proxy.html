@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+{% block title %}Proxy & Repeater{% endblock %}
+{% block extra_head %}
+<style>
+.proxy-layout {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 1rem;
+    height: calc(100vh - 12rem);
+    min-height: 500px;
+}
+.proxy-history {
+    overflow-y: auto;
+    border: 1px solid #1f2937;
+    border-radius: 0.5rem;
+    background: #111827;
+}
+.proxy-detail {
+    overflow-y: auto;
+    border: 1px solid #1f2937;
+    border-radius: 0.5rem;
+    background: #111827;
+}
+.proxy-entry {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #1f2937;
+    cursor: pointer;
+    transition: background 0.1s;
+}
+.proxy-entry:hover {
+    background: #1f2937;
+}
+.proxy-entry.active {
+    background: #1f2937;
+    border-left: 3px solid #059669;
+}
+.proxy-entry .method {
+    font-weight: 600;
+    font-size: 0.75rem;
+    font-family: ui-monospace, monospace;
+}
+.proxy-entry .path {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.proxy-entry .status {
+    font-size: 0.6875rem;
+    font-family: ui-monospace, monospace;
+}
+.req-resp-tabs {
+    display: flex;
+    border-bottom: 1px solid #1f2937;
+}
+.req-resp-tab {
+    padding: 0.5rem 1rem;
+    font-size: 0.8125rem;
+    color: #9ca3af;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+}
+.req-resp-tab:hover {
+    color: #f3f4f6;
+}
+.req-resp-tab.active {
+    color: #34d399;
+    border-bottom-color: #34d399;
+}
+.repeater-controls {
+    border-top: 1px solid #1f2937;
+    padding: 0.75rem;
+}
+.repeater-controls textarea {
+    font-family: ui-monospace, monospace;
+    font-size: 0.75rem;
+}
+</style>
+{% endblock %}
+{% block content %}
+<div x-data="proxyApp()" x-init="init()" class="proxy-layout">
+    <div class="proxy-history">
+        <div class="flex items-center justify-between p-3 border-b border-gray-800">
+            <h2 class="text-sm font-semibold text-white">History</h2>
+            <div class="flex gap-2">
+                <button @click="loadHistory()" class="text-xs text-gray-400 hover:text-white px-2 py-1 rounded border border-gray-700 hover:border-gray-600">Refresh</button>
+                <button @click="clearHistory()" class="text-xs text-red-400 hover:text-red-300 px-2 py-1 rounded border border-gray-700 hover:border-red-800">Clear</button>
+            </div>
+        </div>
+        <div class="p-2">
+            <input type="text" x-model="filter" @input="loadHistory()" placeholder="Filter by host..." class="w-full bg-gray-800 text-white rounded px-2 py-1.5 text-xs border border-gray-700 focus:border-emerald-500 focus:outline-none">
+        </div>
+        <template x-if="captures.length === 0">
+            <div class="flex items-center justify-center h-32 text-gray-500 text-xs">
+                <div class="text-center">
+                    <div class="text-lg mb-1">📡</div>
+                    <div>No captured traffic</div>
+                    <div class="mt-1">Run: <code class="text-emerald-400">bugfinder proxy</code></div>
+                </div>
+            </div>
+        </template>
+        <template x-for="c in captures" :key="c.id">
+            <div class="proxy-entry" :class="{ active: selectedId === c.id }" @click="selectCapture(c.id)">
+                <div class="flex justify-between items-center">
+                    <span class="method" :class="{
+                        'text-emerald-400': c.method === 'GET',
+                        'text-yellow-400': c.method === 'POST',
+                        'text-purple-400': c.method === 'PUT',
+                        'text-red-400': c.method === 'DELETE'
+                    }" x-text="c.method"></span>
+                    <span class="status" :class="{
+                        'text-green-400': c.status_code >= 200 && c.status_code < 300,
+                        'text-yellow-400': c.status_code >= 300 && c.status_code < 400,
+                        'text-red-400': c.status_code >= 400
+                    }" x-text="c.status_code || '...'"></span>
+                </div>
+                <div class="path" x-text="c.path"></div>
+                <div class="flex justify-between text-xs text-gray-600 mt-0.5">
+                    <span x-text="c.host"></span>
+                    <span x-text="c.duration_ms + 'ms'"></span>
+                </div>
+            </div>
+        </template>
+    </div>
+
+    <div class="proxy-detail flex flex-col">
+        <template x-if="!selectedId">
+            <div class="flex items-center justify-center h-full text-gray-500 text-sm">
+                <div class="text-center">
+                    <div class="text-4xl mb-2">🔍</div>
+                    <div>Select a request from history</div>
+                    <div class="text-xs mt-1">or configure your browser to use proxy at 127.0.0.1:8081</div>
+                </div>
+            </div>
+        </template>
+
+        <template x-if="detail">
+            <div class="flex flex-col h-full">
+                <div class="flex items-center justify-between p-3 border-b border-gray-800">
+                    <div>
+                        <span class="font-semibold text-white text-sm" x-text="detail.method + ' ' + detail.path"></span>
+                        <span class="ml-2 text-xs text-gray-500" x-text="detail.host + ':' + detail.port"></span>
+                    </div>
+                    <span class="text-xs" :class="{
+                        'text-green-400': detail.status_code >= 200 && detail.status_code < 300,
+                        'text-red-400': detail.status_code >= 400,
+                        'text-yellow-400': detail.status_code >= 300 && detail.status_code < 400
+                    }" x-text="'Status: ' + detail.status_code + ' | ' + detail.duration_ms + 'ms'"></span>
+                </div>
+
+                <div class="req-resp-tabs">
+                    <div class="req-resp-tab" :class="{ active: detailTab === 'request' }" @click="detailTab = 'request'">Request</div>
+                    <div class="req-resp-tab" :class="{ active: detailTab === 'response' }" @click="detailTab = 'response'">Response</div>
+                    <div class="req-resp-tab" :class="{ active: detailTab === 'repeater' }" @click="detailTab = 'repeater'">Repeater</div>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-3" x-show="detailTab === 'request'" x-cloak>
+                    <h4 class="text-xs text-gray-400 mb-1">Headers</h4>
+                    <pre class="bg-gray-900 text-gray-300 p-2 rounded text-xs font-mono overflow-x-auto whitespace-pre-wrap" x-text="formatHeaders(detail.request_headers)"></pre>
+                    <h4 class="text-xs text-gray-400 mt-3 mb-1" x-show="detail.request_body">Body</h4>
+                    <pre class="bg-gray-900 text-gray-300 p-2 rounded text-xs font-mono overflow-x-auto whitespace-pre-wrap" x-text="detail.request_body"></pre>
+                </div>
+
+                <div class="flex-1 overflow-y-auto p-3" x-show="detailTab === 'response'" x-cloak>
+                    <h4 class="text-xs text-gray-400 mb-1">Headers</h4>
+                    <pre class="bg-gray-900 text-gray-300 p-2 rounded text-xs font-mono overflow-x-auto whitespace-pre-wrap" x-text="formatHeaders(detail.response_headers)"></pre>
+                    <h4 class="text-xs text-gray-400 mt-3 mb-1" x-show="detail.response_body">Body</h4>
+                    <pre class="bg-gray-900 text-gray-300 p-2 rounded text-xs font-mono overflow-x-auto whitespace-pre-wrap max-h-96" x-text="detail.response_body"></pre>
+                </div>
+
+                <div class="flex-1 flex flex-col" x-show="detailTab === 'repeater'" x-cloak>
+                    <div class="flex-1 overflow-y-auto p-3">
+                        <h4 class="text-xs text-gray-400 mb-1">Raw Request (edit and send)</h4>
+                        <textarea x-model="repeaterRequest" class="w-full bg-gray-900 text-gray-300 p-2 rounded text-xs font-mono border border-gray-700 focus:border-emerald-500 focus:outline-none" rows="10" style="resize:vertical;min-height:120px"></textarea>
+                    </div>
+                    <div class="repeater-controls flex gap-2 items-center">
+                        <button @click="sendRepeater()" :disabled="repeaterLoading" class="bg-emerald-600 text-white px-4 py-1.5 rounded text-xs font-medium hover:bg-emerald-700 disabled:opacity-50">
+                            <span x-show="!repeaterLoading">Send</span>
+                            <span x-show="repeaterLoading">Sending...</span>
+                        </button>
+                        <span class="text-xs text-gray-500" x-show="repeaterResult.status_code" x-text="'Status: ' + repeaterResult.status_code + ' (' + repeaterResult.duration_ms + 'ms)'"></span>
+                    </div>
+                    <div x-show="repeaterResult.body" class="overflow-y-auto p-3 border-t border-gray-800" style="max-height:200px">
+                        <h4 class="text-xs text-gray-400 mb-1">Response</h4>
+                        <pre class="bg-gray-900 text-gray-300 p-2 rounded text-xs font-mono overflow-x-auto whitespace-pre-wrap" x-text="repeaterResult.body"></pre>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
+</div>
+
+<script>
+function proxyApp() {
+    return {
+        captures: [],
+        selectedId: null,
+        detail: null,
+        filter: '',
+        detailTab: 'request',
+        repeaterRequest: '',
+        repeaterLoading: false,
+        repeaterResult: { status_code: null, body: '', duration_ms: 0 },
+
+        async init() {
+            await this.loadHistory();
+        },
+
+        async loadHistory() {
+            const params = new URLSearchParams({ limit: '100' });
+            if (this.filter) params.set('host', this.filter);
+            try {
+                const res = await fetch('/api/proxy/history?' + params);
+                if (res.ok) this.captures = await res.json();
+            } catch (_) {}
+        },
+
+        async selectCapture(id) {
+            this.selectedId = id;
+            this.detailTab = 'request';
+            this.repeaterResult = { status_code: null, body: '', duration_ms: 0 };
+            try {
+                const res = await fetch('/api/proxy/capture/' + id);
+                if (res.ok) {
+                    this.detail = await res.json();
+                    this.repeaterRequest = this.buildRawRequest(this.detail);
+                }
+            } catch (_) {}
+        },
+
+        buildRawRequest(detail) {
+            let raw = `${detail.method} ${detail.path} HTTP/1.1\n`;
+            raw += `Host: ${detail.host}\n`;
+            if (detail.request_headers) {
+                for (const line of detail.request_headers.split('\n')) {
+                    if (!line.toLowerCase().startsWith('host:')) {
+                        raw += line + '\n';
+                    }
+                }
+            }
+            raw += `Host: ${detail.host}\n`;
+            if (detail.request_body) {
+                raw += '\n' + detail.request_body;
+            }
+            return raw;
+        },
+
+        async sendRepeater() {
+            this.repeaterLoading = true;
+            this.repeaterResult = { status_code: null, body: '', duration_ms: 0 };
+            try {
+                const res = await fetch('/api/proxy/repeater', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        capture_id: this.selectedId,
+                        method: this.detail?.method || 'GET',
+                        url: '',
+                        headers: this.repeaterRequest,
+                        body: ''
+                    })
+                });
+                if (res.ok) {
+                    this.repeaterResult = await res.json();
+                }
+            } catch (e) {
+                this.repeaterResult = { status_code: 0, body: 'Error: ' + e.message, duration_ms: 0 };
+            } finally {
+                this.repeaterLoading = false;
+            }
+        },
+
+        async clearHistory() {
+            if (!confirm('Clear all captured traffic?')) return;
+            try {
+                await fetch('/api/proxy/history', { method: 'DELETE' });
+                this.captures = [];
+                this.selectedId = null;
+                this.detail = null;
+            } catch (_) {}
+        },
+
+        formatHeaders(headers) {
+            if (!headers) return '';
+            return headers;
+        }
+    }
+}
+</script>
+{% endblock %}

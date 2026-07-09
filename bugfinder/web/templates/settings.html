@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<div x-data="settingsPage()" x-init="init()">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-white">Settings</h1>
+        <p class="text-gray-400 mt-1">Configure API keys and application settings</p>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-2 space-y-6">
+            <div class="bg-gray-900 rounded-lg border border-gray-800 p-6">
+                <h2 class="text-lg font-semibold text-white mb-4">AI Provider</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Provider</label>
+                        <select x-model="config.ai_provider" class="w-full bg-gray-800 text-white rounded px-3 py-2 border border-gray-700 focus:border-emerald-500 focus:outline-none">
+                            <option value="nvidia">NVIDIA</option>
+                            <option value="openai">OpenAI</option>
+                            <option value="anthropic">Anthropic</option>
+                            <option value="ollama">Ollama (Local)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-900 rounded-lg border border-gray-800 p-6">
+                <h2 class="text-lg font-semibold text-white mb-4">NVIDIA API</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">API Key</label>
+                        <input type="password" x-model="config.nvidia_api_key" placeholder="nvapi-..." class="w-full bg-gray-800 text-white rounded px-3 py-2 border border-gray-700 focus:border-emerald-500 focus:outline-none font-mono text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Model</label>
+                        <input type="text" x-model="config.nvidia_model" placeholder="minimax-m3" class="w-full bg-gray-800 text-white rounded px-3 py-2 border border-gray-700 focus:border-emerald-500 focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-900 rounded-lg border border-gray-800 p-6">
+                <h2 class="text-lg font-semibold text-white mb-4">OpenAI API</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">API Key</label>
+                        <input type="password" x-model="config.openai_api_key" placeholder="sk-..." class="w-full bg-gray-800 text-white rounded px-3 py-2 border border-gray-700 focus:border-emerald-500 focus:outline-none font-mono text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Model</label>
+                        <input type="text" x-model="config.openai_model" placeholder="gpt-4o" class="w-full bg-gray-800 text-white rounded px-3 py-2 border border-gray-700 focus:border-emerald-500 focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-900 rounded-lg border border-gray-800 p-6">
+                <h2 class="text-lg font-semibold text-white mb-4">Anthropic API</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">API Key</label>
+                        <input type="password" x-model="config.anthropic_api_key" placeholder="sk-ant-..." class="w-full bg-gray-800 text-white rounded px-3 py-2 border border-gray-700 focus:border-emerald-500 focus:outline-none font-mono text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Model</label>
+                        <input type="text" x-model="config.anthropic_model" placeholder="claude-3-opus-20240229" class="w-full bg-gray-800 text-white rounded px-3 py-2 border border-gray-700 focus:border-emerald-500 focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-900 rounded-lg border border-gray-800 p-6">
+                <h2 class="text-lg font-semibold text-white mb-4">Ollama (Local)</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Base URL</label>
+                        <input type="text" x-model="config.ollama_base_url" placeholder="http://localhost:11434" class="w-full bg-gray-800 text-white rounded px-3 py-2 border border-gray-700 focus:border-emerald-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Model</label>
+                        <input type="text" x-model="config.ollama_model" placeholder="llama3" class="w-full bg-gray-800 text-white rounded px-3 py-2 border border-gray-700 focus:border-emerald-500 focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-900 rounded-lg border border-gray-800 p-6">
+                <h2 class="text-lg font-semibold text-white mb-4">Scanning</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Max Concurrent Tasks</label>
+                        <input type="number" x-model="config.max_concurrent_tasks" class="w-full bg-gray-800 text-white rounded px-3 py-2 border border-gray-700 focus:border-emerald-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Request Timeout (s)</label>
+                        <input type="number" x-model="config.request_timeout" class="w-full bg-gray-800 text-white rounded px-3 py-2 border border-gray-700 focus:border-emerald-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Rate Limit (req/s)</label>
+                        <input type="number" x-model="config.rate_limit_per_second" class="w-full bg-gray-800 text-white rounded px-3 py-2 border border-gray-700 focus:border-emerald-500 focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-900 rounded-lg border border-gray-800 p-6">
+                <h2 class="text-lg font-semibold text-white mb-4">Notifications</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Discord Webhook URL</label>
+                        <input type="password" x-model="config.discord_webhook_url" placeholder="https://discord.com/api/webhooks/..." class="w-full bg-gray-800 text-white rounded px-3 py-2 border border-gray-700 focus:border-emerald-500 focus:outline-none font-mono text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Slack Webhook URL</label>
+                        <input type="password" x-model="config.slack_webhook_url" placeholder="https://hooks.slack.com/services/..." class="w-full bg-gray-800 text-white rounded px-3 py-2 border border-gray-700 focus:border-emerald-500 focus:outline-none font-mono text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">GitHub Token</label>
+                        <input type="password" x-model="config.github_token" placeholder="ghp_..." class="w-full bg-gray-800 text-white rounded px-3 py-2 border border-gray-700 focus:border-emerald-500 focus:outline-none font-mono text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">GitHub Repo</label>
+                        <input type="text" x-model="config.github_repo" placeholder="owner/repo" class="w-full bg-gray-800 text-white rounded px-3 py-2 border border-gray-700 focus:border-emerald-500 focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-900 rounded-lg border border-gray-800 p-6">
+                <h2 class="text-lg font-semibold text-white mb-4">Web UI</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Secret Key</label>
+                        <input type="password" x-model="config.web_secret_key" placeholder="change-me-to-a-random-secret" class="w-full bg-gray-800 text-white rounded px-3 py-2 border border-gray-700 focus:border-emerald-500 focus:outline-none font-mono text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-sm text-gray-400 mb-1">Session Expiry (hours)</label>
+                        <input type="number" x-model="config.web_session_expiry_hours" class="w-full bg-gray-800 text-white rounded px-3 py-2 border border-gray-700 focus:border-emerald-500 focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-900 rounded-lg border border-gray-800 p-6">
+                <h2 class="text-lg font-semibold text-white mb-4">Modes</h2>
+                <div class="space-y-4">
+                    <label class="flex items-center gap-3">
+                        <input type="checkbox" x-model="config.beginner_mode" class="w-4 h-4 rounded bg-gray-800 border-gray-700 text-emerald-500 focus:ring-emerald-500">
+                        <span class="text-white">Beginner Mode</span>
+                    </label>
+                    <label class="flex items-center gap-3">
+                        <input type="checkbox" x-model="config.educational_mode" class="w-4 h-4 rounded bg-gray-800 border-gray-700 text-emerald-500 focus:ring-emerald-500">
+                        <span class="text-white">Educational Mode</span>
+                    </label>
+                    <label class="flex items-center gap-3">
+                        <input type="checkbox" x-model="config.ai_enabled" class="w-4 h-4 rounded bg-gray-800 border-gray-700 text-emerald-500 focus:ring-emerald-500">
+                        <span class="text-white">AI Features Enabled</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-6">
+            <div class="bg-gray-900 rounded-lg border border-gray-800 p-6 sticky top-4">
+                <h2 class="text-lg font-semibold text-white mb-4">Actions</h2>
+                <div class="space-y-3">
+                    <button @click="save()" :disabled="saving" class="w-full bg-emerald-600 text-white px-4 py-2 rounded font-medium hover:bg-emerald-700 transition disabled:opacity-50" x-text="saving ? 'Saving...' : 'Save Configuration'"></button>
+                    <button @click="load()" class="w-full bg-gray-700 text-white px-4 py-2 rounded font-medium hover:bg-gray-600 transition">Reload from Disk</button>
+                </div>
+                <template x-if="message">
+                    <div class="mt-4 p-3 rounded" :class="message.type === 'success' ? 'bg-green-900 text-green-400' : 'bg-red-900 text-red-400'" x-text="message.text"></div>
+                </template>
+                <div class="mt-4 text-xs text-gray-500">
+                    <p>Config saved to:</p>
+                    <p class="font-mono mt-1 break-all" x-text="envPath"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function settingsPage() {
+    return {
+        config: {},
+        envPath: '',
+        saving: false,
+        message: null,
+        async init() {
+            await this.load();
+        },
+        async load() {
+            try {
+                const res = await fetch('/api/config');
+                if (res.ok) {
+                    const data = await res.json();
+                    this.config = data.config;
+                    this.envPath = data.env_path;
+                }
+            } catch (e) {
+                this.message = { type: 'error', text: 'Failed to load config: ' + e.message };
+            }
+        },
+        async save() {
+            this.saving = true;
+            this.message = null;
+            const values = Object.entries(this.config).map(([key, value]) => ({
+                key,
+                value: String(value)
+            }));
+            try {
+                const res = await fetch('/api/config', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ values })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    this.config = data.config;
+                    this.envPath = data.env_path;
+                    this.message = { type: 'success', text: 'Configuration saved successfully!' };
+                    setTimeout(() => this.message = null, 3000);
+                } else {
+                    const err = await res.text();
+                    this.message = { type: 'error', text: 'Failed to save: ' + err };
+                }
+            } catch (e) {
+                this.message = { type: 'error', text: 'Network error: ' + e.message };
+            } finally {
+                this.saving = false;
+            }
+        }
+    }
+}
+</script>
+{% endblock %}

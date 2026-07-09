@@ -93,6 +93,7 @@ all = [
 ]
 
 [project.scripts]
+bugfinder = "bugfinder.cli.launcher:app"
 bf = "bugfinder.cli.commands:app"
 bf-web = "bugfinder.web.app:main"
 

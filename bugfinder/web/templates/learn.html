@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% block title %}Learn{% endblock %}
+{% block extra_head %}
+<style>
+.tutorial-progress {
+    height: 3px;
+    background: #1f2937;
+    border-radius: 2px;
+    overflow: hidden;
+}
+.tutorial-progress-fill {
+    height: 100%;
+    background: #059669;
+    transition: width 0.3s ease;
+    border-radius: 2px;
+}
+.tutorial-step-content {
+    line-height: 1.7;
+}
+.tutorial-step-content p {
+    margin: 0.75rem 0;
+}
+.tutorial-step-content ul, .tutorial-step-content ol {
+    margin: 0.5rem 0;
+    padding-left: 1.5rem;
+}
+.tutorial-step-content li {
+    margin: 0.25rem 0;
+}
+.tutorial-step-content code {
+    background: #111827;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    font-size: 0.8125rem;
+}
+.tutorial-step-content strong {
+    color: #34d399;
+}
+.tutorial-step-content pre {
+    background: #111827;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin: 0.75rem 0;
+    border: 1px solid #374151;
+}
+</style>
+{% endblock %}
+{% block content %}
+<div x-data="learnApp()" x-init="init()">
+    <div class="mb-8">
+        <h1 class="text-3xl font-bold text-white">Security Tutorials</h1>
+        <p class="text-gray-400 mt-1">Interactive guides to learn security testing techniques</p>
+    </div>
+
+    <template x-if="!selectedTutorial">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <template x-for="t in tutorials" :key="t.id">
+                <div class="bg-gray-900 rounded-lg border border-gray-800 p-5 cursor-pointer hover:border-emerald-700 transition" @click="openTutorial(t.id)">
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold text-white" x-text="t.title"></h3>
+                            <p class="text-sm text-gray-400 mt-1 line-clamp-2" x-text="t.description"></p>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex items-center gap-3 text-xs text-gray-500">
+                        <span class="px-2 py-0.5 rounded" :class="{
+                            'bg-emerald-900 text-emerald-400': t.difficulty === 'beginner',
+                            'bg-yellow-900 text-yellow-400': t.difficulty === 'intermediate',
+                            'bg-red-900 text-red-400': t.difficulty === 'advanced'
+                        }" x-text="t.difficulty"></span>
+                        <span x-text="t.category"></span>
+                        <span x-text="t.duration_minutes + ' min'"></span>
+                        <span x-text="t.steps_count + ' steps'"></span>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </template>
+
+    <template x-if="selectedTutorial">
+        <div>
+            <button @click="selectedTutorial = null; currentStep = 0" class="text-emerald-400 hover:text-emerald-300 text-sm mb-4">&larr; Back to tutorials</button>
+
+            <div class="bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
+                <div class="p-6 border-b border-gray-800">
+                    <div class="flex items-start justify-between mb-3">
+                        <div>
+                            <h2 class="text-2xl font-bold text-white" x-text="selectedTutorial.title"></h2>
+                            <p class="text-gray-400 mt-1 text-sm" x-text="selectedTutorial.description"></p>
+                        </div>
+                        <div class="flex items-center gap-2 text-xs text-gray-500 flex-shrink-0">
+                            <span class="px-2 py-0.5 rounded" :class="{
+                                'bg-emerald-900 text-emerald-400': selectedTutorial.difficulty === 'beginner',
+                                'bg-yellow-900 text-yellow-400': selectedTutorial.difficulty === 'intermediate',
+                                'bg-red-900 text-red-400': selectedTutorial.difficulty === 'advanced'
+                            }" x-text="selectedTutorial.difficulty"></span>
+                            <span x-text="selectedTutorial.duration_minutes + ' min'"></span>
+                        </div>
+                    </div>
+                    <div class="tutorial-progress">
+                        <div class="tutorial-progress-fill" :style="'width:' + ((currentStep + 1) / selectedTutorial.steps.length * 100) + '%'"></div>
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                        <span x-text="'Step ' + (currentStep + 1) + ' of ' + selectedTutorial.steps.length"></span>
+                        <span x-text="Math.round((currentStep + 1) / selectedTutorial.steps.length * 100) + '%'"></span>
+                    </div>
+                </div>
+
+                <div class="p-6">
+                    <div class="mb-2">
+                        <span class="text-lg font-semibold text-white" x-text="selectedTutorial.steps[currentStep]?.title"></span>
+                    </div>
+
+                    <div class="tutorial-step-content text-gray-300 text-sm leading-relaxed" x-html="renderContent(currentStep)"></div>
+
+                    <template x-if="selectedTutorial.steps[currentStep]?.code">
+                        <div class="mt-4">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs text-gray-500">Code</span>
+                                <span class="text-xs text-gray-600 font-mono" x-text="selectedTutorial.steps[currentStep]?.language"></span>
+                            </div>
+                            <pre class="bg-gray-950 text-green-300 p-4 rounded text-sm font-mono overflow-x-auto" x-text="selectedTutorial.steps[currentStep]?.code"></pre>
+                        </div>
+                    </template>
+
+                    <template x-if="selectedTutorial.steps[currentStep]?.expected">
+                        <div class="mt-3 bg-blue-900/20 border border-blue-800 rounded p-3">
+                            <span class="text-xs font-medium text-blue-400">Expected result: </span>
+                            <span class="text-xs text-blue-300" x-text="selectedTutorial.steps[currentStep]?.expected"></span>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="border-t border-gray-800 p-4 flex justify-between items-center">
+                    <button @click="prevStep()" :disabled="currentStep === 0" class="text-sm px-4 py-2 rounded border border-gray-700 text-gray-300 hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed transition">&larr; Previous</button>
+                    <div class="flex items-center gap-2">
+                        <template x-for="(step, i) in selectedTutorial.steps" :key="i">
+                            <button @click="currentStep = i" class="w-2.5 h-2.5 rounded-full transition" :class="i === currentStep ? 'bg-emerald-500' : 'bg-gray-700 hover:bg-gray-600'"></button>
+                        </template>
+                    </div>
+                    <button @click="nextStep()" :disabled="currentStep >= selectedTutorial.steps.length - 1" class="text-sm px-4 py-2 rounded border border-gray-700 text-gray-300 hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed transition">Next &rarr;</button>
+                </div>
+
+                <template x-if="selectedTutorial.references && selectedTutorial.references.length > 0 && currentStep === selectedTutorial.steps.length - 1">
+                    <div class="border-t border-gray-800 p-4">
+                        <h4 class="text-sm text-gray-400 mb-2">References</h4>
+                        <div class="space-y-1">
+                            <template x-for="ref in selectedTutorial.references" :key="ref">
+                                <a :href="ref" target="_blank" class="block text-xs text-blue-400 hover:text-blue-300" x-text="ref"></a>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </template>
+</div>
+
+<script>
+function learnApp() {
+    return {
+        tutorials: [],
+        selectedTutorial: null,
+        currentStep: 0,
+
+        async init() {
+            const res = await fetch('/api/tutorials');
+            if (res.ok) this.tutorials = await res.json();
+        },
+
+        async openTutorial(id) {
+            const res = await fetch('/api/tutorials/' + id);
+            if (res.ok) {
+                this.selectedTutorial = await res.json();
+                this.currentStep = 0;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        },
+
+        nextStep() {
+            if (this.currentStep < this.selectedTutorial.steps.length - 1) {
+                this.currentStep++;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        },
+
+        prevStep() {
+            if (this.currentStep > 0) {
+                this.currentStep--;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        },
+
+        renderContent(stepIndex) {
+            const step = this.selectedTutorial?.steps[stepIndex];
+            if (!step) return '';
+            let html = step.content || '';
+            html = html
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/\n/g, '<br>');
+            return '<p>' + html + '</p>';
+        }
+    }
+}
+</script>
+{% endblock %}

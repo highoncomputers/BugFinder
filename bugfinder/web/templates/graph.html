@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+{% block title %}Attack Surface Graph{% endblock %}
+{% block extra_head %}
+<style>
+#graph-container {
+    width: 100%;
+    height: calc(100vh - 12rem);
+    min-height: 500px;
+    background: #0f172a;
+    border: 1px solid #1f2937;
+    border-radius: 0.5rem;
+    position: relative;
+}
+#graph-container canvas {
+    border-radius: 0.5rem;
+}
+.graph-tooltip {
+    position: absolute;
+    background: #1f2937;
+    border: 1px solid #374151;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.8125rem;
+    color: #f3f4f6;
+    pointer-events: none;
+    max-width: 300px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    display: none;
+    z-index: 100;
+}
+.graph-controls {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    display: flex;
+    gap: 0.5rem;
+    z-index: 10;
+}
+.graph-control-btn {
+    background: #1f2937;
+    color: #f3f4f6;
+    border: 1px solid #374151;
+    border-radius: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.graph-control-btn:hover {
+    background: #374151;
+    border-color: #059669;
+}
+.graph-stats {
+    display: flex;
+    gap: 1.5rem;
+    padding: 0.75rem 0;
+    flex-wrap: wrap;
+}
+.graph-stat {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+    color: #9ca3af;
+}
+.graph-stat-dot {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 9999px;
+}
+.graph-legend {
+    display: flex;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    flex-wrap: wrap;
+}
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+.legend-shape {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 2px;
+}
+</style>
+{% endblock %}
+{% block content %}
+<div x-data="graphApp()" x-init="init()">
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <h1 class="text-3xl font-bold text-white">Attack Surface Graph</h1>
+            <p class="text-gray-400 mt-1">Visualize scans, findings, and assets in an interactive network</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <select x-model="viewMode" @change="loadGraph()" class="bg-gray-800 text-white rounded px-3 py-2 border border-gray-700 focus:border-emerald-500 focus:outline-none text-sm">
+                <option value="all">All Scans</option>
+                <template x-for="s in scanList" :key="s.id">
+                    <option :value="'scan_' + s.id" x-text="s.target"></option>
+                </template>
+            </select>
+        </div>
+    </div>
+
+    <div class="graph-stats">
+        <div class="graph-stat">
+            <div class="graph-stat-dot" style="background:#059669"></div>
+            <span x-text="stats.scans + ' scans'"></span>
+        </div>
+        <div class="graph-stat">
+            <div class="graph-stat-dot" style="background:#f97316"></div>
+            <span x-text="stats.findings + ' findings'"></span>
+        </div>
+        <div class="graph-stat">
+            <div class="graph-stat-dot" style="background:#6366f1"></div>
+            <span x-text="stats.assets + ' assets'"></span>
+        </div>
+    </div>
+
+    <div class="graph-legend">
+        <div class="legend-item"><div class="legend-shape" style="background:#059669;border-radius:2px"></div> Scan</div>
+        <div class="legend-item"><div class="legend-shape" style="background:#ef4444;border-radius:50%"></div> Critical</div>
+        <div class="legend-item"><div class="legend-shape" style="background:#f97316;border-radius:50%"></div> High</div>
+        <div class="legend-item"><div class="legend-shape" style="background:#eab308;border-radius:50%"></div> Medium</div>
+        <div class="legend-item"><div class="legend-shape" style="background:#3b82f6;border-radius:50%"></div> Low</div>
+        <div class="legend-item"><div class="legend-shape" style="background:#6366f1;border-radius:4px"></div> Asset</div>
+    </div>
+
+    <div id="graph-container" style="position:relative">
+        <div id="graph-tooltip" class="graph-tooltip"></div>
+        <div class="graph-controls">
+            <button class="graph-control-btn" @click="zoomIn()">+ Zoom</button>
+            <button class="graph-control-btn" @click="zoomOut()">- Zoom</button>
+            <button class="graph-control-btn" @click="fitView()">Fit</button>
+            <button class="graph-control-btn" @click="loadGraph()">Refresh</button>
+        </div>
+        <div id="network" style="width:100%;height:100%"></div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/vis-network@9.1.9/dist/vis-network.min.js"></script>
+<style>
+@import url('https://unpkg.com/vis-network@9.1.9/dist/dist/vis-network.min.css');
+</style>
+
+<script>
+function graphApp() {
+    return {
+        network: null,
+        viewMode: 'all',
+        scanList: [],
+        stats: { scans: 0, findings: 0, assets: 0 },
+
+        async init() {
+            await this.loadScanList();
+            await this.loadGraph();
+        },
+
+        async loadScanList() {
+            try {
+                const res = await fetch('/api/scans');
+                if (res.ok) this.scanList = await res.json();
+            } catch (_) {}
+        },
+
+        async loadGraph() {
+            const container = document.getElementById('network');
+            if (!container) return;
+
+            let url = '/api/graph';
+            if (this.viewMode && this.viewMode !== 'all') {
+                const parts = this.viewMode.split('_');
+                if (parts[0] === 'scan') url = `/api/graph/scan/${parts.slice(1).join('_')}`;
+            }
+
+            try {
+                const res = await fetch(url);
+                if (!res.ok) return;
+                const data = await res.json();
+                this.stats = data.stats || { scans: 0, findings: 0, assets: 0 };
+
+                const nodes = new vis.DataSet(data.nodes.map(n => ({
+                    ...n,
+                    title: n.title || n.label,
+                })));
+
+                const edges = new vis.DataSet(data.edges);
+
+                const options = {
+                    nodes: {
+                        borderWidth: 2,
+                        shadow: { enabled: true, size: 4 },
+                        font: { color: '#f3f4f6', face: 'ui-sans-serif' },
+                    },
+                    edges: {
+                        width: 1.5,
+                        smooth: { type: 'curvedCW', roundness: 0.2 },
+                        arrows: { to: { enabled: true, scaleFactor: 0.5 } },
+                    },
+                    physics: {
+                        solver: 'forceAtlas2Based',
+                        forceAtlas2Based: {
+                            gravitationalConstant: -40,
+                            centralGravity: 0.005,
+                            springLength: 120,
+                            springConstant: 0.08,
+                            damping: 0.4,
+                        },
+                        stabilization: { iterations: 100 },
+                    },
+                    interaction: {
+                        hover: true,
+                        tooltipDelay: 200,
+                        navigationButtons: false,
+                        keyboard: true,
+                    },
+                    groups: {
+                        scan: { shape: 'box', color: '#059669' },
+                        finding: { shape: 'dot' },
+                        asset: { shape: 'hexagon', color: '#6366f1' },
+                    },
+                    layout: { improvedLayout: true },
+                };
+
+                if (this.network) {
+                    this.network.setData({ nodes, edges });
+                    this.network.setOptions(options);
+                } else {
+                    this.network = new vis.Network(container, { nodes, edges }, options);
+                }
+
+                this.network.on('click', (params) => {
+                    if (params.nodes.length > 0) {
+                        const nodeId = params.nodes[0];
+                        const node = nodes.get(nodeId);
+                        if (node && node.metadata) {
+                            const meta = node.metadata;
+                            if (meta.type === 'finding') {
+                                window.location.href = `/findings/${meta.id}`;
+                            } else if (meta.type === 'scan') {
+                                window.location.href = `/scans/${meta.id}`;
+                            }
+                        }
+                    }
+                });
+
+                this.network.on('doubleClick', (params) => {
+                    if (params.nodes.length > 0) {
+                        const nodeId = params.nodes[0];
+                        const node = nodes.get(nodeId);
+                        if (node && node.metadata) {
+                            const meta = node.metadata;
+                            if (meta.type === 'finding') {
+                                window.open(`/findings/${meta.id}`, '_blank');
+                            } else if (meta.type === 'scan') {
+                                window.open(`/scans/${meta.id}`, '_blank');
+                            }
+                        }
+                    }
+                });
+
+            } catch (e) {
+                console.error('Graph load error:', e);
+            }
+        },
+
+        zoomIn() {
+            if (this.network) this.network.zoomIn(0.4);
+        },
+
+        zoomOut() {
+            if (this.network) this.network.zoomOut(0.4);
+        },
+
+        fitView() {
+            if (this.network) this.network.fit({ animation: true });
+        },
+    }
+}
+</script>
+{% endblock %}

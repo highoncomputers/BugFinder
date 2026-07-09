@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+{% block title %}AI Co-pilot{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="/static/css/chat.css">
+{% endblock %}
+{% block content %}
+<div x-data="chatApp()" x-init="init()" class="chat-container bg-gray-900 rounded-lg border border-gray-800">
+    <div class="flex items-center justify-between px-6 py-3 border-b border-gray-800">
+        <div>
+            <h2 class="text-lg font-semibold text-white">AI Security Co-pilot</h2>
+            <p class="text-xs text-gray-500">Ask questions about vulnerabilities, scans, or security concepts</p>
+        </div>
+        <button @click="clearChat()" class="text-xs text-gray-500 hover:text-gray-300 px-3 py-1.5 rounded border border-gray-700 hover:border-gray-600 transition">
+            Clear chat
+        </button>
+    </div>
+
+    <div class="chat-messages" x-ref="messages" @scroll="handleScroll">
+        <template x-if="messages.length === 0">
+            <div class="chat-empty-state">
+                <div class="chat-empty-state-icon">🛡️</div>
+                <h3>How can I help you?</h3>
+                <p>Ask me about vulnerabilities, scan results, exploitation techniques, or security concepts. I'm your AI security co-pilot.</p>
+                <div class="chat-suggestions" style="justify-content:center;padding-top:1rem">
+                    <button class="chat-suggestion-btn" @click="sendSuggestion('What vulnerabilities did you find?')">What vulnerabilities did you find?</button>
+                    <button class="chat-suggestion-btn" @click="sendSuggestion('How do I exploit XSS?')">How do I exploit XSS?</button>
+                    <button class="chat-suggestion-btn" @click="sendSuggestion('Explain SQL injection')">Explain SQL injection</button>
+                    <button class="chat-suggestion-btn" @click="sendSuggestion('Generate a security report summary')">Generate a report summary</button>
+                </div>
+            </div>
+        </template>
+
+        <template x-for="(msg, i) in messages" :key="i">
+            <div class="chat-message" :class="msg.role">
+                <div class="chat-avatar" :class="msg.role">
+                    <span x-text="msg.role === 'user' ? 'U' : 'AI'"></span>
+                </div>
+                <div class="chat-bubble" :class="msg.role" x-html="renderMarkdown(msg.content)"></div>
+            </div>
+        </template>
+
+        <div x-show="loading" class="chat-message assistant">
+            <div class="chat-avatar assistant"><span>AI</span></div>
+            <div class="chat-bubble assistant">
+                <div class="chat-typing">
+                    <div class="chat-typing-dot"></div>
+                    <div class="chat-typing-dot"></div>
+                    <div class="chat-typing-dot"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="chat-input-area">
+        <div class="chat-suggestions" x-show="messages.length > 0 && !loading">
+            <button class="chat-suggestion-btn" @click="sendSuggestion('What should I test next?')">What should I test next?</button>
+            <button class="chat-suggestion-btn" @click="sendSuggestion('Summarize the critical findings')">Summarize critical findings</button>
+            <button class="chat-suggestion-btn" @click="sendSuggestion('How do I fix these issues?')">How do I fix these?</button>
+        </div>
+        <div class="chat-input-wrapper">
+            <textarea
+                x-model="input"
+                @keydown.enter.prevent="send()"
+                @input="autoResize"
+                placeholder="Ask a question about your security assessment..."
+                class="chat-input"
+                :disabled="loading"
+                x-ref="input"
+            ></textarea>
+            <button @click="send()" :disabled="loading || !input.trim()" class="chat-send-btn">
+                <span x-show="!loading">Send</span>
+                <span x-show="loading">...</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function chatApp() {
+    return {
+        messages: [],
+        input: '',
+        loading: false,
+        scanId: null,
+        findingId: null,
+
+        init() {
+            const params = new URLSearchParams(window.location.search);
+            this.scanId = params.get('scan_id') ? parseInt(params.get('scan_id')) : null;
+            this.findingId = params.get('finding_id') ? parseInt(params.get('finding_id')) : null;
+
+            if (this.scanId) {
+                this.messages.push({
+                    role: 'assistant',
+                    content: `I'm analyzing scan **#${this.scanId}**. What would you like to know about it?`
+                });
+            }
+        },
+
+        async send() {
+            const text = this.input.trim();
+            if (!text || this.loading) return;
+
+            this.input = '';
+            this.messages.push({ role: 'user', content: text });
+            this.loading = true;
+            this.scrollToBottom();
+
+            try {
+                const res = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: text,
+                        scan_id: this.scanId,
+                        finding_id: this.findingId
+                    })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    this.messages.push({ role: 'assistant', content: data.reply });
+                } else {
+                    const err = await res.text();
+                    this.messages.push({ role: 'assistant', content: `⚠ Error: ${err}` });
+                }
+            } catch (e) {
+                this.messages.push({ role: 'assistant', content: `⚠ Network error: ${e.message}` });
+            } finally {
+                this.loading = false;
+                this.scrollToBottom();
+                this.$refs.input.focus();
+            }
+        },
+
+        sendSuggestion(text) {
+            this.input = text;
+            this.send();
+        },
+
+        async clearChat() {
+            this.messages = [];
+            this.loading = false;
+            try {
+                await fetch('/api/chat/clear', { method: 'POST' });
+            } catch (_) {}
+            this.$refs.input.focus();
+        },
+
+        renderMarkdown(text) {
+            if (!text) return '';
+            let html = text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+
+            html = html
+                .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+                .replace(/`([^`]+)`/g, '<code>$1</code>')
+                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+                .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+                .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+                .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+                .replace(/^- (.+)$/gm, '<li>$1</li>')
+                .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/\n/g, '<br>');
+
+            return '<p>' + html + '</p>';
+        },
+
+        scrollToBottom() {
+            this.$nextTick(() => {
+                const el = this.$refs.messages;
+                if (el) el.scrollTop = el.scrollHeight;
+            });
+        },
+
+        handleScroll() {},
+
+        autoResize(e) {
+            const el = e.target;
+            el.style.height = 'auto';
+            el.style.height = Math.min(el.scrollHeight, 128) + 'px';
+        }
+    }
+}
+</script>
+{% endblock %}

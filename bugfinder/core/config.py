@@ -114,5 +114,32 @@ class Settings(BaseSettings):
     def cache_path(self) -> Path:
         return Path(self.cache_dir)
 
+    def save_to_env(self, env_path: str | Path = ".env") -> None:
+        env_file = Path(env_path)
+        existing = {}
+        if env_file.exists():
+            for line in env_file.read_text(encoding="utf-8").splitlines():
+                if "=" in line and not line.strip().startswith("#"):
+                    k, v = line.strip().split("=", 1)
+                    existing[k] = v
+
+        overrides = {
+            f"BF_{k.upper()}": str(v) if v is not None else ""
+            for k, v in self.model_dump().items()
+        }
+        overrides.pop("BF_MODEL_CONFIG", None)
+
+        existing.update(overrides)
+
+        lines: list[str] = [
+            "# BugFinder Configuration — saved from Web UI",
+            f"# Generated at: {__import__('datetime').datetime.now().isoformat()}",
+            "",
+        ]
+        for key in sorted(existing):
+            lines.append(f"{key}={existing[key]}")
+
+        env_file.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
 
 settings = Settings()

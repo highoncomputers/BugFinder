@@ -7,6 +7,7 @@
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
     <script src="https://unpkg.com/alpinejs@3.14.8" defer></script>
     <link rel="stylesheet" href="/static/css/app.css">
+    {% block extra_head %}{% endblock %}
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
 </head>
 <body class="h-full">
@@ -22,6 +23,14 @@
                                 <a href="/scans" class="text-gray-300 hover:text-emerald-400 px-3 py-2 rounded text-sm font-medium">Scans</a>
                                 <a href="/findings" class="text-gray-300 hover:text-emerald-400 px-3 py-2 rounded text-sm font-medium">Findings</a>
                                 <a href="/projects" class="text-gray-300 hover:text-emerald-400 px-3 py-2 rounded text-sm font-medium">Projects</a>
+                                <a href="/learn" class="text-gray-300 hover:text-emerald-400 px-3 py-2 rounded text-sm font-medium">Learn</a>
+                                <a href="/plugins" class="text-gray-300 hover:text-emerald-400 px-3 py-2 rounded text-sm font-medium">Plugins</a>
+                                <a href="/teams" class="text-gray-300 hover:text-emerald-400 px-3 py-2 rounded text-sm font-medium">Teams</a>
+                                <a href="/exports" class="text-gray-300 hover:text-emerald-400 px-3 py-2 rounded text-sm font-medium">Exports</a>
+                                <a href="/proxy" class="text-gray-300 hover:text-emerald-400 px-3 py-2 rounded text-sm font-medium">Proxy</a>
+                                <a href="/graph" class="text-gray-300 hover:text-emerald-400 px-3 py-2 rounded text-sm font-medium">Graph</a>
+                                <a href="/chat" class="text-gray-300 hover:text-emerald-400 px-3 py-2 rounded text-sm font-medium">AI Co-pilot</a>
+                                <a href="/settings" class="text-gray-300 hover:text-emerald-400 px-3 py-2 rounded text-sm font-medium">Settings</a>
                             </div>
                         </div>
                     </div>
