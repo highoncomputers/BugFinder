@@ -89,7 +89,7 @@ TARGET_PLANS: dict[TargetType, list[dict]] = {
         {"agent": "recon.dns", "rationale": "Reverse DNS lookup"},
         {"agent": "verification", "rationale": "Verify discoveries"},
     ],
-    TargetType.APK: [
+    TargetType.ANDROID: [
         {"agent": "android.decompile", "rationale": "Decompile APK for analysis"},
         {"agent": "android.webview", "rationale": "Check WebView security configuration"},
         {"agent": "android.storage", "rationale": "Check local storage security"},

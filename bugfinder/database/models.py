@@ -63,6 +63,7 @@ class ScanSession(Base):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow, onupdate=_utcnow)
     extra_data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     project = relationship("Project", back_populates="scans")

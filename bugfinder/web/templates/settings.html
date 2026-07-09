@@ -28,12 +28,37 @@
                 <h2 class="text-lg font-semibold text-white mb-4">NVIDIA API</h2>
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm text-gray-400 mb-1">API Key</label>
-                        <input type="password" x-model="config.nvidia_api_key" placeholder="nvapi-..." class="w-full bg-gray-800 text-white rounded px-3 py-2 border border-gray-700 focus:border-emerald-500 focus:outline-none font-mono text-sm">
+                        <label class="form-label">API Key</label>
+                        <input type="password" x-model="config.nvidia_api_key" placeholder="nvapi-..." class="input font-mono text-sm">
                     </div>
                     <div>
-                        <label class="block text-sm text-gray-400 mb-1">Model</label>
-                        <input type="text" x-model="config.nvidia_model" placeholder="minimax-m3" class="w-full bg-gray-800 text-white rounded px-3 py-2 border border-gray-700 focus:border-emerald-500 focus:outline-none">
+                        <label class="form-label">Model</label>
+                        <div class="flex gap-2">
+                            <select x-model="config.nvidia_model" class="select flex-1">
+                                <option value="meta/llama-3.1-8b-instruct">Llama 3.1 8B (fast)</option>
+                                <option value="meta/llama-3.3-70b-instruct">Llama 3.3 70B (powerful)</option>
+                                <option value="meta/llama-4-maverick-17b-128e-instruct">Llama 4 Maverick 17B</option>
+                                <option value="nvidia/llama-3.1-nemotron-nano-8b-v1">Nemotron Nano 8B</option>
+                                <option value="nvidia/llama-3.3-nemotron-super-49b-v1">Nemotron Super 49B</option>
+                                <option value="mistralai/mistral-7b-instruct-v0.3">Mistral 7B</option>
+                                <option value="google/gemma-2-27b-it">Gemma 2 27B</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <button @click="testNvidia()" :disabled="testingNvidia" class="btn btn-secondary btn-sm">
+                            <span x-show="!testingNvidia">Test Connection</span>
+                            <span x-show="testingNvidia">Testing...</span>
+                        </button>
+                        <span x-show="nvidiaTestResult" class="text-xs ml-2" :class="nvidiaTestOk ? 'text-green-400' : 'text-red-400'" x-text="nvidiaTestResult"></span>
+                    </div>
+                    <div x-show="availableModels.length > 0" class="mt-2">
+                        <label class="form-label">Available Models <span class="text-muted">(click to select)</span></label>
+                        <div class="flex flex-wrap gap-1 max-h-32 overflow-y-auto p-2 rounded" style="background: rgba(13,17,23,0.6); border: 1px solid #21262d;">
+                            <template x-for="m in availableModels" :key="m">
+                                <button @click="config.nvidia_model = m" class="text-xs px-2 py-1 rounded" style="background: rgba(48,54,61,0.5); border: 1px solid #30363d; color: #58a6ff;" x-text="m"></button>
+                            </template>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -179,6 +204,10 @@ function settingsPage() {
         envPath: '',
         saving: false,
         message: null,
+        testingNvidia: false,
+        nvidiaTestResult: '',
+        nvidiaTestOk: false,
+        availableModels: [],
         async init() {
             await this.load();
         },
@@ -222,6 +251,31 @@ function settingsPage() {
             } finally {
                 this.saving = false;
             }
+        },
+        async testNvidia() {
+            this.testingNvidia = true;
+            this.nvidiaTestResult = '';
+            this.availableModels = [];
+            try {
+                const res = await fetch('/api/test-connection', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ api_key: this.config.nvidia_api_key })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.nvidiaTestResult = 'Connected! ' + data.models.length + ' models available';
+                    this.nvidiaTestOk = true;
+                    this.availableModels = data.models;
+                } else {
+                    this.nvidiaTestResult = data.error || 'Connection failed';
+                    this.nvidiaTestOk = false;
+                }
+            } catch (e) {
+                this.nvidiaTestResult = 'Error: ' + e.message;
+                this.nvidiaTestOk = false;
+            }
+            this.testingNvidia = false;
         }
     }
 }

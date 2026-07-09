@@ -34,7 +34,8 @@ async def list_scans(
                 status=s.status if isinstance(s.status, str) else s.status.value if hasattr(s.status, 'value') else str(s.status),
                 profile=s.profile or "quick",
                 progress=s.progress or 0.0, current_step=s.current_step,
-                project_id=s.project_id, created_at=s.created_at, updated_at=s.updated_at,
+                project_id=s.project_id, created_at=s.created_at,
+                updated_at=getattr(s, 'updated_at', s.created_at),
                 findings_count=len(findings),
             ))
         return result
@@ -59,8 +60,15 @@ async def create_scan(data: ScanCreate, user: str = Depends(get_current_user)):
         )
         scan_id = scan.id
 
-    orchestrator = ScanOrchestrator()
-    await orchestrator.run_scan(scan_id, data.target, target_type, data.profile)
+    try:
+        orchestrator = ScanOrchestrator()
+        await orchestrator.run_scan(scan_id, data.target, target_type, data.profile)
+    except Exception as exc:
+        async with async_session() as session:
+            repo = Repository(session)
+            await repo.update_scan(scan_id, status="failed", error=str(exc))
+        from bugfinder.web.routes.sse import update_scan_progress
+        update_scan_progress(scan_id, {"status": "failed", "error": str(exc)})
 
     async with async_session() as session:
         repo = Repository(session)
@@ -75,7 +83,7 @@ async def create_scan(data: ScanCreate, user: str = Depends(get_current_user)):
             profile=scan.profile or "quick",
             progress=scan.progress or 0.0, current_step=scan.current_step,
             project_id=scan.project_id, created_at=scan.created_at,
-            updated_at=scan.updated_at, findings_count=len(findings),
+            updated_at=getattr(scan, 'updated_at', scan.created_at), findings_count=len(findings),
         )
 
 
@@ -97,7 +105,7 @@ async def get_scan(scan_id: str, user: str = Depends(get_current_user)):
             profile=scan.profile or "quick",
             progress=scan.progress or 0.0, current_step=scan.current_step,
             project_id=scan.project_id, created_at=scan.created_at,
-            updated_at=scan.updated_at, findings_count=len(findings),
+            updated_at=getattr(scan, 'updated_at', scan.created_at), findings_count=len(findings),
         )
 
 

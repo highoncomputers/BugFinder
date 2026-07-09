@@ -56,6 +56,43 @@ async def login(req: LoginRequest, response: Response):
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API key")
 
 
+@router.post("/api/validate-key")
+async def validate_key(req: LoginRequest):
+    from bugfinder.core.config import Settings
+    cfg = Settings()
+    valid_keys = [
+        cfg.nvidia_api_key,
+        cfg.openai_api_key,
+        cfg.anthropic_api_key,
+        cfg.github_token,
+    ]
+    if any(k and req.api_key == k for k in valid_keys):
+        return {"valid": True}
+    return {"valid": False, "error": "API key not found in configuration. Save it via Settings first."}
+
+
+@router.post("/api/test-connection")
+async def test_connection(req: LoginRequest):
+    from bugfinder.core.config import Settings
+    cfg = Settings()
+    import httpx
+    base_url = (cfg.nvidia_base_url or "https://integrate.api.nvidia.com/v1").rstrip("/")
+    try:
+        async with httpx.AsyncClient(
+            base_url=base_url,
+            timeout=httpx.Timeout(15),
+            headers={"Authorization": f"Bearer {req.api_key}", "Content-Type": "application/json"},
+        ) as client:
+            resp = await client.get("/models")
+            if resp.status_code == 200:
+                models = resp.json()
+                available = [m["id"] for m in models.get("data", [])]
+                return {"success": True, "models": available}
+            return {"success": False, "error": f"API returned {resp.status_code}"}
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
 @router.post("/logout")
 async def logout(response: Response):
     response.delete_cookie("session")

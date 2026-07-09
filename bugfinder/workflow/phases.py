@@ -40,7 +40,7 @@ class PhaseDefinitions:
         if target_type == TargetType.API:
             base.extend(["graphql", "jwt", "cors", "rate"])
             base.extend(["discover", "fuzz"])
-        if target_type == TargetType.APK:
+        if target_type == TargetType.ANDROID:
             base.extend(["decompile", "webview", "storage", "deeplinks"])
         if profile == "deep":
             base.extend(["cloud", "s3", "gcp", "azure", "firebase", "secrets", "tls"])

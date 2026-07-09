@@ -39,7 +39,7 @@ async def dashboard_stats(user: str = Depends(get_current_user)):
                 status=st, profile=s.profile or "quick",
                 progress=s.progress or 0.0, current_step=s.current_step,
                 project_id=s.project_id, created_at=s.created_at,
-                updated_at=s.updated_at, findings_count=len(findings),
+                updated_at=getattr(s, 'updated_at', s.created_at), findings_count=len(findings),
             ))
 
         return DashboardStats(

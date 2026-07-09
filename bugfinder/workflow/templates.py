@@ -34,7 +34,7 @@ WORKFLOW_TEMPLATES: dict[str, WorkflowTemplate] = {
     "deep-dive": WorkflowTemplate(
         name="Deep Dive",
         description="Maximum coverage: all agents, cloud checks, race conditions, Android analysis",
-        target_types=[TargetType.WEBSITE, TargetType.API, TargetType.APK, TargetType.IP, TargetType.CIDR],
+        target_types=[TargetType.WEBSITE, TargetType.API, TargetType.ANDROID, TargetType.IP_ADDRESS, TargetType.CIDR],
         agents=["dns", "tech", "port", "cert", "service", "crawler", "wayback", "github", "googledorks",
                 "xss", "sqli", "ssti", "xxe", "lfi", "ssrf", "graphql", "jwt", "cors", "cookies",
                 "csrf", "redirect", "host_header", "race", "cache", "secrets", "tls",
@@ -51,7 +51,7 @@ WORKFLOW_TEMPLATES: dict[str, WorkflowTemplate] = {
     "android-security": WorkflowTemplate(
         name="Android Security",
         description="Full Android APK security analysis",
-        target_types=[TargetType.APK],
+        target_types=[TargetType.ANDROID],
         agents=["decompile", "webview", "storage", "deeplinks", "secrets"],
         phases=["recon", "vuln_detection", "reporting"],
     ),

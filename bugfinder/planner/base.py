@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from bugfinder.ai.client import NVIDIAClient
+from bugfinder.ai.client import BaseAIProvider
 from bugfinder.database.repository import Repository
 from bugfinder.knowledge_graph.graph import KnowledgeGraph
 
@@ -11,7 +11,7 @@ class BasePlanner(ABC):
     def __init__(
         self,
         knowledge_graph: KnowledgeGraph,
-        ai_client: NVIDIAClient | None = None,
+        ai_client: BaseAIProvider | None = None,
         repository: Repository | None = None,
     ) -> None:
         self.knowledge_graph = knowledge_graph

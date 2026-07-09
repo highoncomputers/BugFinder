@@ -22,7 +22,7 @@ class Settings(BaseSettings):
 
     # NVIDIA
     nvidia_api_key: str = Field(default="", description="NVIDIA API key")
-    nvidia_model: str = Field(default="minimax-m3", description="NVIDIA model name")
+    nvidia_model: str = Field(default="meta/llama-3.1-8b-instruct", description="NVIDIA model name")
     nvidia_base_url: str = Field(
         default="https://integrate.api.nvidia.com/v1",
         description="NVIDIA API base URL",

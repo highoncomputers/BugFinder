@@ -190,14 +190,18 @@ class ScanOrchestrator:
             repo = Repository(session)
             await repo.update_scan(scan_id, status="running", progress=0.0)
 
-        if self.ai_client and settings.ai_enabled:
-            planner = AIPlanner(self.kg, self.ai_client, self.repo)
-        else:
-            planner = RulePlanner(self.kg, self.repo)
+        try:
+            if self.ai_client and settings.ai_enabled:
+                planner = AIPlanner(self.kg, self.ai_client, self.repo)
+            else:
+                planner = RulePlanner(self.kg, self.repo)
 
-        plan = await planner.create_plan(target, ttype_str)
+            plan = await planner.create_plan(target, ttype_str)
+        except Exception as e:
+            self.log(f"Planner failed: {e}")
+            plan = await RulePlanner(self.kg, self.repo).create_plan(target, ttype_str)
+
         self.progress.total_steps = plan.total_steps
-
         ctx = self._build_agent_context(target, ttype_str, scan_id)
 
         for i, step in enumerate(plan.steps):
