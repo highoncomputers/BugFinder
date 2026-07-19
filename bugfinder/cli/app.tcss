@@ -1,0 +1,205 @@
+Screen {
+    align: center middle;
+    background: #1a1b26;
+}
+
+Header {
+    background: #2a2b3e;
+    color: #c0caf5;
+}
+
+Footer {
+    background: #2a2b3e;
+    color: #565f89;
+}
+
+#main-container, #progress-container, #results-container, #agents-container, #config-container {
+    width: 80%;
+    height: 100%;
+    align: center top;
+    padding: 1 2;
+}
+
+#app-title {
+    text-style: bold;
+    text-align: center;
+    color: #e0af68;
+    margin-bottom: 0;
+    text-size: 2;
+}
+
+#app-subtitle {
+    text-align: center;
+    color: #565f89;
+    margin-bottom: 1;
+}
+
+#target-input {
+    margin: 1 0;
+    width: 100%;
+    background: #2a2b3e;
+    color: #c0caf5;
+    border: solid #3b4261;
+}
+
+#target-input:focus {
+    border: solid #7aa2f7;
+}
+
+.button-row {
+    align: center middle;
+    margin: 1 0;
+}
+
+.scan-btn, .config-btn {
+    margin: 0 1;
+    min-width: 16;
+}
+
+#recent-header {
+    margin-top: 1;
+    text-style: bold;
+    color: #c0caf5;
+}
+
+#recent-list {
+    height: 8;
+    border: solid #3b4261;
+    background: #1a1b26;
+}
+
+#recent-list > ListItem {
+    color: #565f89;
+}
+
+#recent-list > ListItem:hover {
+    background: #2a2b3e;
+}
+
+#progress-title, #results-title, #agents-title, #config-title {
+    text-style: bold;
+    text-align: center;
+    margin-bottom: 1;
+}
+
+#progress-target {
+    text-align: center;
+    margin-bottom: 1;
+}
+
+#scan-progress {
+    margin: 1 0;
+    width: 100%;
+}
+
+#progress-status {
+    text-align: center;
+    margin-bottom: 1;
+}
+
+#progress-log {
+    border: solid #3b4261;
+    background: #0f0f1a;
+    height: 60%;
+    margin: 1 0;
+}
+
+#results-summary {
+    margin-bottom: 1;
+    text-align: center;
+}
+
+#results-tabs {
+    height: 80%;
+}
+
+#results-findings, #results-assets {
+    border: solid #3b4261;
+    background: #0f0f1a;
+}
+
+TabbedContent {
+    background: #1a1b26;
+}
+
+TabPane {
+    background: #1a1b26;
+}
+
+#agent-filter {
+    margin: 1 0;
+    width: 100%;
+    background: #2a2b3e;
+    color: #c0caf5;
+    border: solid #3b4261;
+}
+
+#agent-list {
+    height: 80%;
+    border: solid #3b4261;
+    background: #1a1b26;
+}
+
+#agent-list > ListItem {
+    color: #7dcfff;
+}
+
+#agent-list > ListItem:hover {
+    background: #2a2b3e;
+}
+
+.config-label {
+    margin-top: 1;
+    color: #c0caf5;
+}
+
+#config-api-key, #config-reports-path {
+    margin: 0 0;
+    width: 100%;
+    background: #2a2b3e;
+    color: #c0caf5;
+    border: solid #3b4261;
+}
+
+#config-hint {
+    text-align: center;
+    margin-top: 2;
+    color: #565f89;
+}
+
+LoadingIndicator {
+    color: #7aa2f7;
+}
+
+Static {
+    color: #c0caf5;
+}
+
+Button {
+    background: #2a2b3e;
+    color: #c0caf5;
+    border: solid #3b4261;
+}
+
+Button:focus {
+    border: solid #7aa2f7;
+}
+
+Button:hover {
+    background: #3b4261;
+}
+
+Button.primary {
+    background: #7aa2f7;
+    color: #1a1b26;
+}
+
+Button.warning {
+    background: #e0af68;
+    color: #1a1b26;
+}
+
+#spacer-top { height: 2; }
+#spacer-1 { height: 1; }
+#spacer-2 { height: 1; }
+#spacer-3 { height: 1; }

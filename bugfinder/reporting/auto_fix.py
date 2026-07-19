@@ -21,6 +21,7 @@ def _register(category: str):
     def decorator(func):
         FIX_GENERATORS[category] = func
         return func
+
     return decorator
 
 
@@ -50,14 +51,16 @@ def generate_fixes_for_finding(finding: Any) -> list[dict[str, Any]]:
     fix = generate_fix(finding)
     if not fix:
         return []
-    return [{
-        "title": fix.title,
-        "description": fix.description,
-        "severity": fix.severity,
-        "code_fixes": fix.code_fixes,
-        "config_fixes": fix.config_fixes,
-        "references": fix.references,
-    }]
+    return [
+        {
+            "title": fix.title,
+            "description": fix.description,
+            "severity": fix.severity,
+            "code_fixes": fix.code_fixes,
+            "config_fixes": fix.config_fixes,
+            "references": fix.references,
+        }
+    ]
 
 
 @_register("xss")
@@ -576,7 +579,7 @@ full_url = f"https://{domain}{path}"
         config_fixes=[
             {
                 "title": "Nginx Host Validation",
-                "code": """# Only accept requests with valid Host headers
+                "code": r"""# Only accept requests with valid Host headers
 if ($host !~* ^(example\.com|www\.example\.com)$) {
     return 444;
 }

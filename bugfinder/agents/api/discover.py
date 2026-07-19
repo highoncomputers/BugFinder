@@ -108,9 +108,7 @@ class APIDiscoverAgent(BaseAgent):
                             findings.append(
                                 {
                                     "title": f"API Authentication Required: {path}",
-                                    "description": (
-                                        f"API endpoint {url} requires authentication (HTTP {resp.status_code})"
-                                    ),
+                                    "description": (f"API endpoint {url} requires authentication (HTTP {resp.status_code})"),
                                     "severity": "info",
                                     "category": "authentication",
                                     "evidence": {

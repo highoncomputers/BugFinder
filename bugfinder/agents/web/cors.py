@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from typing import Any
-
-from bugfinder.agents.base import BaseAgent, AgentContext, AgentResult
-from bugfinder.core.types import Severity, Confidence
+from bugfinder.agents.base import AgentContext, AgentResult, BaseAgent
+from bugfinder.core.types import Confidence, Severity
 from bugfinder.utils.http import get
 
 
@@ -32,7 +30,7 @@ class CORSAgent(BaseAgent):
                     headers={"Origin": origin},
                     timeout=10,
                 )
-                if hasattr(resp, 'headers'):
+                if hasattr(resp, "headers"):
                     acao = resp.headers.get("Access-Control-Allow-Origin", "")
                     acac = resp.headers.get("Access-Control-Allow-Credentials", "")
                     if acao == origin or acao == "*":
@@ -45,7 +43,11 @@ class CORSAgent(BaseAgent):
                             "cwe_id": "942",
                             "owasp_category": "A01-Broken Access Control",
                             "cvss_score": 6.1,
-                            "evidence": {"origin_tested": origin, "access_control_allow_origin": acao, "access_control_allow_credentials": acac},
+                            "evidence": {
+                                "origin_tested": origin,
+                                "access_control_allow_origin": acao,
+                                "access_control_allow_credentials": acac,
+                            },
                             "remediation": "Do not reflect the Origin header. Use a strict allowlist of trusted origins.",
                         }
                         if acac.lower() == "true":
@@ -59,21 +61,23 @@ class CORSAgent(BaseAgent):
         if not findings:
             try:
                 resp = await get(base_url, timeout=10)
-                if hasattr(resp, 'headers'):
+                if hasattr(resp, "headers"):
                     acao = resp.headers.get("Access-Control-Allow-Origin", "")
                     if acao == "*":
-                        findings.append({
-                            "title": "Wildcard CORS Origin",
-                            "description": "Server allows all origins with wildcard '*'",
-                            "severity": Severity.MEDIUM,
-                            "confidence": Confidence.HIGH,
-                            "category": "cors",
-                            "cwe_id": "942",
-                            "owasp_category": "A01-Broken Access Control",
-                            "cvss_score": 5.0,
-                            "evidence": {"access_control_allow_origin": "*"},
-                            "remediation": "Use specific origins instead of wildcard. Never use '*' with credentials.",
-                        })
+                        findings.append(
+                            {
+                                "title": "Wildcard CORS Origin",
+                                "description": "Server allows all origins with wildcard '*'",
+                                "severity": Severity.MEDIUM,
+                                "confidence": Confidence.HIGH,
+                                "category": "cors",
+                                "cwe_id": "942",
+                                "owasp_category": "A01-Broken Access Control",
+                                "cvss_score": 5.0,
+                                "evidence": {"access_control_allow_origin": "*"},
+                                "remediation": "Use specific origins instead of wildcard. Never use '*' with credentials.",
+                            }
+                        )
             except Exception:
                 pass
 

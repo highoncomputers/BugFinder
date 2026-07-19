@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import io
 import csv
-from typing import Any
+import io
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.responses import StreamingResponse, PlainTextResponse, JSONResponse
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
 from bugfinder.web.auth import get_current_user
@@ -27,20 +26,24 @@ async def export_csv(scan_id: str, user: str = Depends(get_current_user)):
 
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["Title", "Severity", "Confidence", "Status", "Category", "CWE", "CVSS", "Description", "Remediation", "Discovered"])
+    writer.writerow(
+        ["Title", "Severity", "Confidence", "Status", "Category", "CWE", "CVSS", "Description", "Remediation", "Discovered"]
+    )
     for f in findings:
-        writer.writerow([
-            f.title,
-            f.severity.value if hasattr(f.severity, "value") else f.severity,
-            f.confidence.value if hasattr(f.confidence, "value") else f.confidence,
-            f.status.value if hasattr(f.status, "value") else f.status,
-            f.category or "",
-            f.cwe_id or "",
-            f.cvss_score or "",
-            (f.description or "")[:500],
-            (f.remediation or "")[:500],
-            f.discovered_at.isoformat() if f.discovered_at else "",
-        ])
+        writer.writerow(
+            [
+                f.title,
+                f.severity.value if hasattr(f.severity, "value") else f.severity,
+                f.confidence.value if hasattr(f.confidence, "value") else f.confidence,
+                f.status.value if hasattr(f.status, "value") else f.status,
+                f.category or "",
+                f.cwe_id or "",
+                f.cvss_score or "",
+                (f.description or "")[:500],
+                (f.remediation or "")[:500],
+                f.discovered_at.isoformat() if f.discovered_at else "",
+            ]
+        )
 
     output.seek(0)
     return StreamingResponse(
@@ -69,17 +72,19 @@ async def export_project_csv(project_id: str, user: str = Depends(get_current_us
             repo = Repository(session)
             findings = await repo.list_findings(scan_id=scan.id)
             for f in findings:
-                writer.writerow([
-                    scan.target,
-                    f.title,
-                    f.severity.value if hasattr(f.severity, "value") else f.severity,
-                    f.confidence.value if hasattr(f.confidence, "value") else f.confidence,
-                    f.status.value if hasattr(f.status, "value") else f.status,
-                    f.category or "",
-                    f.cwe_id or "",
-                    f.cvss_score or "",
-                    f.discovered_at.isoformat() if f.discovered_at else "",
-                ])
+                writer.writerow(
+                    [
+                        scan.target,
+                        f.title,
+                        f.severity.value if hasattr(f.severity, "value") else f.severity,
+                        f.confidence.value if hasattr(f.confidence, "value") else f.confidence,
+                        f.status.value if hasattr(f.status, "value") else f.status,
+                        f.category or "",
+                        f.cwe_id or "",
+                        f.cvss_score or "",
+                        f.discovered_at.isoformat() if f.discovered_at else "",
+                    ]
+                )
 
     output.seek(0)
     return StreamingResponse(
@@ -109,6 +114,7 @@ async def export_to_jira(data: list[JiraIssue], user: str = Depends(get_current_
     base_url = "https://your-jira-instance.atlassian.net"
 
     import httpx
+
     async with httpx.AsyncClient() as client:
         for issue in data:
             try:
@@ -126,11 +132,13 @@ async def export_to_jira(data: list[JiraIssue], user: str = Depends(get_current_
                     },
                     headers={"Authorization": f"Bearer {settings.github_token}"},
                 )
-                results.append({
-                    "summary": issue.summary,
-                    "status": resp.status_code,
-                    "response": resp.json() if resp.status_code < 400 else resp.text,
-                })
+                results.append(
+                    {
+                        "summary": issue.summary,
+                        "status": resp.status_code,
+                        "response": resp.json() if resp.status_code < 400 else resp.text,
+                    }
+                )
             except Exception as e:
                 results.append({"summary": issue.summary, "status": 0, "response": str(e)})
 
@@ -150,17 +158,19 @@ class H1Report(BaseModel):
 async def export_to_hackerone(data: list[H1Report]):
     formatted = []
     for r in data:
-        formatted.append({
-            "data": {
-                "type": "report",
-                "attributes": {
-                    "title": r.title,
-                    "vulnerability_information": _h1_description(r),
-                    "severity": r.severity.lower(),
-                    "endpoint": r.endpoint,
+        formatted.append(
+            {
+                "data": {
+                    "type": "report",
+                    "attributes": {
+                        "title": r.title,
+                        "vulnerability_information": _h1_description(r),
+                        "severity": r.severity.lower(),
+                        "endpoint": r.endpoint,
+                    },
                 }
             }
-        })
+        )
     return JSONResponse(
         content={"reports": formatted, "count": len(formatted), "format": "hackerone"},
         headers={"Content-Disposition": "attachment; filename=hackerone_reports.json"},
@@ -171,14 +181,16 @@ async def export_to_hackerone(data: list[H1Report]):
 async def export_to_bugcrowd(data: list[H1Report]):
     formatted = []
     for r in data:
-        formatted.append({
-            "title": r.title,
-            "vulnerability_description": r.description,
-            "severity": r.severity.upper(),
-            "remediation": r.remediation,
-            "references": r.references,
-            "endpoint": r.endpoint,
-        })
+        formatted.append(
+            {
+                "title": r.title,
+                "vulnerability_description": r.description,
+                "severity": r.severity.upper(),
+                "remediation": r.remediation,
+                "references": r.references,
+                "endpoint": r.endpoint,
+            }
+        )
     return JSONResponse(
         content={"submissions": formatted, "count": len(formatted), "format": "bugcrowd"},
         headers={"Content-Disposition": "attachment; filename=bugcrowd_submissions.json"},
@@ -200,13 +212,15 @@ async def export_scan_hackerone(scan_id: str, user: str = Depends(get_current_us
     reports = []
     for f in findings:
         severity = f.severity.value if hasattr(f.severity, "value") else f.severity
-        reports.append({
-            "title": f.title,
-            "description": f.description or "",
-            "severity": severity,
-            "remediation": f.remediation or "",
-            "references": f.references or [],
-        })
+        reports.append(
+            {
+                "title": f.title,
+                "description": f.description or "",
+                "severity": severity,
+                "remediation": f.remediation or "",
+                "references": f.references or [],
+            }
+        )
 
     return await export_to_hackerone([H1Report(**r) for r in reports])
 
@@ -226,13 +240,15 @@ async def export_scan_bugcrowd(scan_id: str, user: str = Depends(get_current_use
     reports = []
     for f in findings:
         severity = f.severity.value if hasattr(f.severity, "value") else f.severity
-        reports.append({
-            "title": f.title,
-            "description": f.description or "",
-            "severity": severity,
-            "remediation": f.remediation or "",
-            "references": f.references or [],
-        })
+        reports.append(
+            {
+                "title": f.title,
+                "description": f.description or "",
+                "severity": severity,
+                "remediation": f.remediation or "",
+                "references": f.references or [],
+            }
+        )
 
     return await export_to_bugcrowd([H1Report(**r) for r in reports])
 

@@ -66,9 +66,7 @@ class CorrelationAgent(BaseAgent):
                 kg.add_node(chain_id, "attack_chain", steps=chain)
                 kg.add_edge(chain[0], chain[1], "leads_to")
 
-        summary = (
-            f"Correlated {len(findings)} findings into {len(correlated)} groups, {len(attack_chains)} attack chains"
-        )
+        summary = f"Correlated {len(findings)} findings into {len(correlated)} groups, {len(attack_chains)} attack chains"
         return AgentResult(
             agent_name=self.name,
             status="completed",

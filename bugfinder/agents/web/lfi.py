@@ -64,9 +64,7 @@ class LFIAgent(BaseAgent):
 
             for param in params[:5]:
                 for payload in LFI_PAYLOADS[:3]:
-                    test_url = (
-                        f"{base_url}?{param}={payload}" if "?" not in base_url else f"{base_url}&{param}={payload}"
-                    )
+                    test_url = f"{base_url}?{param}={payload}" if "?" not in base_url else f"{base_url}&{param}={payload}"
                     try:
                         tr = await client.get(test_url, headers=headers)
                         body = tr.text.lower()

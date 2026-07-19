@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
-from bugfinder.web.models import DashboardStats, ScanResponse
+
 from bugfinder.web.auth import get_current_user
+from bugfinder.web.models import DashboardStats, ScanResponse
 
 router = APIRouter()
 
@@ -28,19 +29,30 @@ async def dashboard_stats(user: str = Depends(get_current_user)):
             findings = await repo.list_findings(scan_id=s.id)
             total_findings += len(findings)
             for f in findings:
-                sev = f.severity if isinstance(f.severity, str) else f.severity.value if hasattr(f.severity, 'value') else "info"
+                sev = f.severity if isinstance(f.severity, str) else f.severity.value if hasattr(f.severity, "value") else "info"
                 severity_counts[sev] = severity_counts.get(sev, 0) + 1
-            st = s.status if isinstance(s.status, str) else s.status.value if hasattr(s.status, 'value') else "unknown"
+            st = s.status if isinstance(s.status, str) else s.status.value if hasattr(s.status, "value") else "unknown"
             status_counts[st] = status_counts.get(st, 0) + 1
 
-            recent_scans.append(ScanResponse(
-                id=s.id, target=s.target,
-                target_type=s.target_type if isinstance(s.target_type, str) else s.target_type.value if hasattr(s.target_type, 'value') else str(s.target_type),
-                status=st, profile=s.profile or "quick",
-                progress=s.progress or 0.0, current_step=s.current_step,
-                project_id=s.project_id, created_at=s.created_at,
-                updated_at=getattr(s, 'updated_at', s.created_at), findings_count=len(findings),
-            ))
+            recent_scans.append(
+                ScanResponse(
+                    id=s.id,
+                    target=s.target,
+                    target_type=s.target_type
+                    if isinstance(s.target_type, str)
+                    else s.target_type.value
+                    if hasattr(s.target_type, "value")
+                    else str(s.target_type),
+                    status=st,
+                    profile=s.profile or "quick",
+                    progress=s.progress or 0.0,
+                    current_step=s.current_step,
+                    project_id=s.project_id,
+                    created_at=s.created_at,
+                    updated_at=getattr(s, "updated_at", s.created_at),
+                    findings_count=len(findings),
+                )
+            )
 
         return DashboardStats(
             total_projects=len(projects),

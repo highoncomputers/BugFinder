@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from bugfinder.ai.client import get_ai_client
 from bugfinder.core.config import Settings

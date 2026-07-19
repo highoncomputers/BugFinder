@@ -1,9 +1,6 @@
 from __future__ import annotations
 
-import re
 from typing import Any
-
-from bugfinder.core.config import settings
 
 SYSTEM_CHAT = """You are BugFinder's AI Security Co-pilot — an expert security engineer assistant.
 You help users understand vulnerabilities, interpret scan results, generate exploit PoCs, and learn security concepts.
@@ -49,11 +46,7 @@ class ChatAgent:
 
         try:
             result = await self.ai_client.chat(messages, temperature=0.3, max_tokens=4096)
-            reply = (
-                result.get("choices", [{}])[0]
-                .get("message", {})
-                .get("content", "")
-            )
+            reply = result.get("choices", [{}])[0].get("message", {}).get("content", "")
             self.conversation_history.append({"role": "assistant", "content": reply})
             return reply
         except Exception as e:
@@ -81,11 +74,7 @@ class ChatAgent:
 
         if context.get("knowledge_graph"):
             kg = context["knowledge_graph"]
-            parts.append(
-                f"## Knowledge Graph\n"
-                f"- Nodes: {kg.get('node_count', 0)}\n"
-                f"- Edges: {kg.get('edge_count', 0)}\n"
-            )
+            parts.append(f"## Knowledge Graph\n- Nodes: {kg.get('node_count', 0)}\n- Edges: {kg.get('edge_count', 0)}\n")
 
         return "\n\n".join(parts)
 

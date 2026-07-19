@@ -1,13 +1,10 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
-import secrets
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional
 
 import httpx
 
@@ -21,8 +18,8 @@ class OOBCallback:
     type: str
     payload: str
     created_at: datetime = field(default_factory=datetime.utcnow)
-    received: Optional[datetime] = None
-    data: Optional[dict] = None
+    received: datetime | None = None
+    data: dict | None = None
 
 
 class OOBServer:
@@ -75,7 +72,7 @@ class OOBServer:
             logger.debug("Interact.sh poll failed: %s", e)
         return []
 
-    def clear_callbacks(self, scan_id: Optional[int] = None):
+    def clear_callbacks(self, scan_id: int | None = None):
         if scan_id:
             self._callbacks = [cb for cb in self._callbacks if cb.scan_id != scan_id]
         else:

@@ -9,8 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class RepeaterResult:
-    def __init__(self, status_code: int, headers: dict[str, str],
-                 body: str, duration_ms: int, error: str | None = None):
+    def __init__(self, status_code: int, headers: dict[str, str], body: str, duration_ms: int, error: str | None = None):
         self.status_code = status_code
         self.headers = headers
         self.body = body
@@ -19,9 +18,9 @@ class RepeaterResult:
 
 
 class Repeater:
-    async def send(self, method: str, url: str, headers: str = "",
-                   body: str = "") -> RepeaterResult:
+    async def send(self, method: str, url: str, headers: str = "", body: str = "") -> RepeaterResult:
         import time
+
         start = time.monotonic()
 
         parsed_headers = {}
@@ -57,14 +56,13 @@ class Repeater:
                 error=str(e),
             )
 
-    async def repeat_capture(self, capture: dict[str, Any],
-                             modified_request: str | None = None) -> RepeaterResult:
+    async def repeat_capture(self, capture: dict[str, Any], modified_request: str | None = None) -> RepeaterResult:
         if modified_request:
             lines = modified_request.strip().split("\n")
             first = lines[0].split(" ") if lines else []
             method = first[0] if len(first) > 1 else "GET"
             path = " ".join(first[1:-1]) if len(first) > 2 else (first[1] if len(first) > 1 else "/")
-            host_line = next((l for l in lines[1:] if l.lower().startswith("host:")), "")
+            host_line = next((line for line in lines[1:] if line.lower().startswith("host:")), "")
             host = host_line.split(":", 1)[1].strip() if ":" in host_line else capture.get("host", "localhost")
             port = capture.get("port", 80)
             scheme = "https" if port == 443 else "http"

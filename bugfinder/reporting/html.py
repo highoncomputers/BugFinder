@@ -38,9 +38,7 @@ def generate_html_report(
         evidence = f.get("evidence", {})
         ev_html = ""
         if evidence:
-            ev_html = (
-                "<div class='evidence'><pre>" + "\n".join(f"  {k}: {v}" for k, v in evidence.items()) + "</pre></div>"
-            )
+            ev_html = "<div class='evidence'><pre>" + "\n".join(f"  {k}: {v}" for k, v in evidence.items()) + "</pre></div>"
 
         findings_rows += f"""
         <div class="finding severity-{sev}">

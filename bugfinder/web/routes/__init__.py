@@ -1,6 +1,26 @@
 from fastapi import APIRouter
 
-from bugfinder.web.routes import projects, scans, findings, agents, reports, dashboard, sse, auth, config, chat, graph, exploit, proxy, remediation, teams, comments, plugins, learn, exports
+from bugfinder.web.routes import (
+    agents,
+    auth,
+    chat,
+    comments,
+    config,
+    dashboard,
+    exploit,
+    exports,
+    findings,
+    graph,
+    learn,
+    plugins,
+    projects,
+    proxy,
+    remediation,
+    reports,
+    scans,
+    sse,
+    teams,
+)
 
 router = APIRouter()
 router.include_router(auth.router, tags=["auth"])

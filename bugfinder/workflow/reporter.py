@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from bugfinder.core.types import Severity
-from bugfinder.workflow import Phase, PhaseStatus
+from bugfinder.workflow import Phase
 
 
 class PhaseReporter:
@@ -22,10 +22,13 @@ class PhaseReporter:
             "phase": phase.value,
             "total_findings": len(findings),
             "by_severity": severity_counts,
-            "categories": list(set(
-                f.category if hasattr(f, "category") else (isinstance(f, dict) and f.get("category", ""))
-                for f in findings if hasattr(f, "category") or isinstance(f, dict)
-            )),
+            "categories": list(
+                set(
+                    f.category if hasattr(f, "category") else (isinstance(f, dict) and f.get("category", ""))
+                    for f in findings
+                    if hasattr(f, "category") or isinstance(f, dict)
+                )
+            ),
         }
 
     @staticmethod
@@ -33,11 +36,9 @@ class PhaseReporter:
         phase_summaries = {}
         for wp in progress:
             phase_findings = [
-                f for f in all_findings
-                if getattr(wp, "phase", None) and (
-                    getattr(f, "scan_id", None) == getattr(wp, "scan_id", None)
-                    or True
-                )
+                f
+                for f in all_findings
+                if getattr(wp, "phase", None) and (getattr(f, "scan_id", None) == getattr(wp, "scan_id", None) or True)
             ]
             phase_summaries[wp.phase.value] = PhaseReporter.phase_summary(
                 Phase(wp.phase.value) if isinstance(wp.phase, str) else wp.phase,

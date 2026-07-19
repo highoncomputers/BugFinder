@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import json
 import time
-from typing import Optional
 
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
@@ -17,7 +16,7 @@ def update_scan_progress(scan_id: str, data: dict):
     _scan_progress[scan_id] = {**_scan_progress.get(scan_id, {}), **data, "timestamp": time.time()}
 
 
-def get_scan_progress(scan_id: str) -> Optional[dict]:
+def get_scan_progress(scan_id: str) -> dict | None:
     return _scan_progress.get(scan_id)
 
 

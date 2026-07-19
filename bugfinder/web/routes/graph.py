@@ -64,23 +64,25 @@ def _build_graph(repo: Any, scans: list[Any]) -> dict:
         if scan_id not in seen_nodes:
             seen_nodes.add(scan_id)
             status = _get_status(scan)
-            nodes.append({
-                "id": scan_id,
-                "label": scan.target[:30],
-                "group": "scan",
-                "title": f"<b>{scan.target}</b><br>Status: {status}<br>Profile: {scan.profile}",
-                "shape": "box",
-                "color": "#059669",
-                "font": {"color": "#f3f4f6", "size": 12},
-                "size": 30,
-                "metadata": {
-                    "type": "scan",
-                    "id": scan.id,
-                    "target": scan.target,
-                    "status": status,
-                    "profile": scan.profile,
-                },
-            })
+            nodes.append(
+                {
+                    "id": scan_id,
+                    "label": scan.target[:30],
+                    "group": "scan",
+                    "title": f"<b>{scan.target}</b><br>Status: {status}<br>Profile: {scan.profile}",
+                    "shape": "box",
+                    "color": "#059669",
+                    "font": {"color": "#f3f4f6", "size": 12},
+                    "size": 30,
+                    "metadata": {
+                        "type": "scan",
+                        "id": scan.id,
+                        "target": scan.target,
+                        "status": status,
+                        "profile": scan.profile,
+                    },
+                }
+            )
 
         findings = getattr(scan, "findings", [])
         for f in findings:
@@ -89,36 +91,40 @@ def _build_graph(repo: Any, scans: list[Any]) -> dict:
                 seen_nodes.add(f_id)
                 sev = _get_severity(f)
                 color = SEVERITY_COLORS.get(sev, "#6b7280")
-                nodes.append({
-                    "id": f_id,
-                    "label": f.title[:25],
-                    "group": "finding",
-                    "title": (
-                        f"<b>{f.title}</b><br>"
-                        f"Severity: <span style='color:{color}'>{sev.upper()}</span><br>"
-                        f"Confidence: {_get_confidence(f)}<br>"
-                        f"Category: {f.category or 'N/A'}<br>"
-                        f"CWE: {f.cwe_id or 'N/A'}"
-                    ),
-                    "shape": "dot",
-                    "color": color,
-                    "font": {"color": "#f3f4f6", "size": 10},
-                    "size": _severity_size(sev),
-                    "metadata": {
-                        "type": "finding",
-                        "id": f.id,
-                        "title": f.title,
-                        "severity": sev,
-                        "scan_id": scan.id,
-                    },
-                })
-            edges.append({
-                "from": scan_id,
-                "to": f_id,
-                "label": "finding",
-                "color": {"color": "#4b5563", "opacity": 0.6},
-                "font": {"size": 8, "color": "#6b7280"},
-            })
+                nodes.append(
+                    {
+                        "id": f_id,
+                        "label": f.title[:25],
+                        "group": "finding",
+                        "title": (
+                            f"<b>{f.title}</b><br>"
+                            f"Severity: <span style='color:{color}'>{sev.upper()}</span><br>"
+                            f"Confidence: {_get_confidence(f)}<br>"
+                            f"Category: {f.category or 'N/A'}<br>"
+                            f"CWE: {f.cwe_id or 'N/A'}"
+                        ),
+                        "shape": "dot",
+                        "color": color,
+                        "font": {"color": "#f3f4f6", "size": 10},
+                        "size": _severity_size(sev),
+                        "metadata": {
+                            "type": "finding",
+                            "id": f.id,
+                            "title": f.title,
+                            "severity": sev,
+                            "scan_id": scan.id,
+                        },
+                    }
+                )
+            edges.append(
+                {
+                    "from": scan_id,
+                    "to": f_id,
+                    "label": "finding",
+                    "color": {"color": "#4b5563", "opacity": 0.6},
+                    "font": {"size": 8, "color": "#6b7280"},
+                }
+            )
 
             asset_id = getattr(f, "asset_id", None)
             if asset_id and f"asset_{asset_id}" not in seen_nodes:
@@ -129,29 +135,33 @@ def _build_graph(repo: Any, scans: list[Any]) -> dict:
             a_id = f"asset_{asset.id}"
             if a_id not in seen_nodes:
                 seen_nodes.add(a_id)
-                nodes.append({
-                    "id": a_id,
-                    "label": asset.name[:25],
-                    "group": "asset",
-                    "title": f"<b>{asset.name}</b><br>Type: {asset.asset_type}",
-                    "shape": "hexagon",
-                    "color": "#6366f1",
-                    "font": {"color": "#f3f4f6", "size": 11},
-                    "size": 20,
-                    "metadata": {
-                        "type": "asset",
-                        "id": asset.id,
-                        "name": asset.name,
-                        "asset_type": asset.asset_type,
-                    },
-                })
-            edges.append({
-                "from": scan_id,
-                "to": a_id,
-                "label": "asset",
-                "color": {"color": "#4b5563", "opacity": 0.6},
-                "font": {"size": 8, "color": "#6b7280"},
-            })
+                nodes.append(
+                    {
+                        "id": a_id,
+                        "label": asset.name[:25],
+                        "group": "asset",
+                        "title": f"<b>{asset.name}</b><br>Type: {asset.asset_type}",
+                        "shape": "hexagon",
+                        "color": "#6366f1",
+                        "font": {"color": "#f3f4f6", "size": 11},
+                        "size": 20,
+                        "metadata": {
+                            "type": "asset",
+                            "id": asset.id,
+                            "name": asset.name,
+                            "asset_type": asset.asset_type,
+                        },
+                    }
+                )
+            edges.append(
+                {
+                    "from": scan_id,
+                    "to": a_id,
+                    "label": "asset",
+                    "color": {"color": "#4b5563", "opacity": 0.6},
+                    "font": {"size": 8, "color": "#6b7280"},
+                }
+            )
 
     return {
         "nodes": nodes,

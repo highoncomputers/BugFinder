@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, AsyncGenerator
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-import pytest_asyncio
 
-from bugfinder.agents.base import AgentContext, AgentResult
+from bugfinder.agents.base import AgentContext
 from bugfinder.knowledge_graph.graph import KnowledgeGraph
 from bugfinder.target.parsers import parse_target
 
@@ -56,4 +54,5 @@ def mock_http_response():
         resp.headers = headers or {}
         resp.json = MagicMock(return_value={})
         return resp
+
     return _make

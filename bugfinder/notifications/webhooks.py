@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import json
 import logging
-from typing import Any, Optional
+from typing import Any
 
 import httpx
 
@@ -11,11 +10,15 @@ from bugfinder.core.config import Settings
 logger = logging.getLogger(__name__)
 
 
-async def send_discord_webhook(webhook_url: str, title: str, description: str,
-                                severity: str = "info", fields: list[dict] | None = None,
-                                color: int | None = None) -> bool:
-    colors = {"critical": 0xDC143C, "high": 0xFF4500, "medium": 0xFFA500,
-              "low": 0x1E90FF, "info": 0x808080}
+async def send_discord_webhook(
+    webhook_url: str,
+    title: str,
+    description: str,
+    severity: str = "info",
+    fields: list[dict] | None = None,
+    color: int | None = None,
+) -> bool:
+    colors = {"critical": 0xDC143C, "high": 0xFF4500, "medium": 0xFFA500, "low": 0x1E90FF, "info": 0x808080}
     embed_color = color or colors.get(severity.lower(), 0x808080)
 
     embed = {
@@ -41,10 +44,14 @@ async def send_discord_webhook(webhook_url: str, title: str, description: str,
         return False
 
 
-async def send_slack_webhook(webhook_url: str, title: str, description: str,
-                              severity: str = "info") -> bool:
-    emoji = {"critical": ":red_circle:", "high": ":orange_circle:", "medium": ":warning:",
-             "low": ":large_blue_circle:", "info": ":information_source:"}
+async def send_slack_webhook(webhook_url: str, title: str, description: str, severity: str = "info") -> bool:
+    emoji = {
+        "critical": ":red_circle:",
+        "high": ":orange_circle:",
+        "medium": ":warning:",
+        "low": ":large_blue_circle:",
+        "info": ":information_source:",
+    }
     sev_emoji = emoji.get(severity.lower(), ":information_source:")
 
     payload = {
@@ -69,10 +76,8 @@ async def send_slack_webhook(webhook_url: str, title: str, description: str,
         return False
 
 
-async def send_teams_webhook(webhook_url: str, title: str, description: str,
-                              severity: str = "info") -> bool:
-    color_map = {"critical": "DC143C", "high": "FF4500", "medium": "FFA500",
-                 "low": "1E90FF", "info": "808080"}
+async def send_teams_webhook(webhook_url: str, title: str, description: str, severity: str = "info") -> bool:
+    color_map = {"critical": "DC143C", "high": "FF4500", "medium": "FFA500", "low": "1E90FF", "info": "808080"}
 
     payload = {
         "@type": "MessageCard",
@@ -96,8 +101,7 @@ async def send_teams_webhook(webhook_url: str, title: str, description: str,
         return False
 
 
-async def notify_finding(finding: Any, webhook_url: str | None = None,
-                          service: str = "discord") -> bool:
+async def notify_finding(finding: Any, webhook_url: str | None = None, service: str = "discord") -> bool:
     settings = Settings()
     url = webhook_url or ""
 

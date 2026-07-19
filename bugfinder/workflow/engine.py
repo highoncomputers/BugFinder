@@ -4,7 +4,6 @@ import asyncio
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Optional
 
 from bugfinder.core.types import TargetType
 from bugfinder.workflow import Phase, PhaseStatus
@@ -17,13 +16,13 @@ logger = logging.getLogger(__name__)
 class WorkflowProgress:
     phase: Phase
     status: PhaseStatus
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
     total_steps: int = 0
     completed_steps: int = 0
-    current_step: Optional[str] = None
+    current_step: str | None = None
     findings_count: int = 0
-    error: Optional[str] = None
+    error: str | None = None
 
 
 @dataclass
@@ -34,7 +33,7 @@ class WorkflowResult:
     profile: str
     progress: list[WorkflowProgress]
     started_at: datetime = field(default_factory=datetime.utcnow)
-    completed_at: Optional[datetime] = None
+    completed_at: datetime | None = None
     total_findings: int = 0
 
 
@@ -45,14 +44,12 @@ class WorkflowEngine:
         self.target_type = target_type
         self.profile = profile
         self.progress: dict[Phase, WorkflowProgress] = {}
-        self.result = WorkflowResult(
-            scan_id=scan_id, target=target, target_type=target_type, profile=profile
-        )
+        self.result = WorkflowResult(scan_id=scan_id, target=target, target_type=target_type, profile=profile)
         self.phase_defs = PhaseDefinitions()
         self._cancel_event = asyncio.Event()
 
     @property
-    def current_phase(self) -> Optional[Phase]:
+    def current_phase(self) -> Phase | None:
         for phase in Phase:
             wp = self.progress.get(phase)
             if wp and wp.status == PhaseStatus.IN_PROGRESS:
@@ -82,9 +79,6 @@ class WorkflowEngine:
 
             logger.info("Phase %s: %d agents", phase.value, len(agents))
 
-            from bugfinder.engine.scheduler import ScanOrchestrator
-            orchestrator = ScanOrchestrator()
-
             for agent_name in agents:
                 if self._cancel_event.is_set():
                     wp.status = PhaseStatus.FAILED
@@ -95,24 +89,28 @@ class WorkflowEngine:
 
                 try:
                     from bugfinder.core.registry import discover_agents
+
                     all_agents = discover_agents()
 
-                    from bugfinder.database.session import async_session
-                    from bugfinder.database.repository import Repository
-                    from bugfinder.target.parsers import parse_target
                     from bugfinder.knowledge_graph.graph import KnowledgeGraph
+                    from bugfinder.target.parsers import parse_target
 
                     target_obj = parse_target(self.target)
                     kg = KnowledgeGraph()
                     from bugfinder.ai.client import get_ai_client
+
                     ai_client = get_ai_client()
 
-                    context = type('AgentContext', (), {
-                        'target': target_obj,
-                        'knowledge_graph': kg,
-                        'ai_client': ai_client,
-                        'repository': None,
-                    })()
+                    context = type(
+                        "AgentContext",
+                        (),
+                        {
+                            "target": target_obj,
+                            "knowledge_graph": kg,
+                            "ai_client": ai_client,
+                            "repository": None,
+                        },
+                    )()
 
                     if agent_name in all_agents:
                         agent_cls = all_agents[agent_name]
@@ -127,13 +125,17 @@ class WorkflowEngine:
                 wp.completed_steps += 1
 
                 from bugfinder.web.routes.sse import update_scan_progress
+
                 progress_pct = min(100, int((wp.completed_steps / max(wp.total_steps, 1)) * 100))
-                update_scan_progress(self.scan_id, {
-                    "phase": phase.value,
-                    "agent": agent_name,
-                    "progress": progress_pct,
-                    "status": "running",
-                })
+                update_scan_progress(
+                    self.scan_id,
+                    {
+                        "phase": phase.value,
+                        "agent": agent_name,
+                        "progress": progress_pct,
+                        "status": "running",
+                    },
+                )
 
             wp.status = PhaseStatus.COMPLETED if not self._cancel_event.is_set() else PhaseStatus.FAILED
             wp.completed_at = datetime.utcnow()
@@ -142,10 +144,14 @@ class WorkflowEngine:
         self.result.progress = list(self.progress.values())
 
         from bugfinder.web.routes.sse import update_scan_progress
-        update_scan_progress(self.scan_id, {
-            "status": "completed",
-            "progress": 100,
-            "total_findings": self.result.total_findings,
-        })
+
+        update_scan_progress(
+            self.scan_id,
+            {
+                "status": "completed",
+                "progress": 100,
+                "total_findings": self.result.total_findings,
+            },
+        )
 
         return self.result

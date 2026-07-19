@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 
 
-class Phase(str, Enum):
+class Phase(StrEnum):
     RECON = "recon"
     VULN_DETECTION = "vuln_detection"
     EXPLOITATION = "exploitation"
     REPORTING = "reporting"
 
 
-class PhaseStatus(str, Enum):
+class PhaseStatus(StrEnum):
     PENDING = "pending"
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"

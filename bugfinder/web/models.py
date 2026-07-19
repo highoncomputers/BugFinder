@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -23,7 +23,7 @@ class ProjectResponse(BaseModel):
 class ScanCreate(BaseModel):
     target: str = Field(..., min_length=1)
     profile: str = "quick"
-    project_id: Optional[str] = None
+    project_id: str | None = None
 
 
 class ScanResponse(BaseModel):
@@ -33,8 +33,8 @@ class ScanResponse(BaseModel):
     status: str
     profile: str
     progress: float
-    current_step: Optional[str] = None
-    project_id: Optional[str] = None
+    current_step: str | None = None
+    project_id: str | None = None
     created_at: datetime
     updated_at: datetime
     findings_count: int = 0
@@ -48,18 +48,18 @@ class FindingResponse(BaseModel):
     severity: str
     confidence: str
     status: str
-    category: Optional[str] = None
-    cwe_id: Optional[str] = None
-    owasp_category: Optional[str] = None
-    cvss_score: Optional[float] = None
+    category: str | None = None
+    cwe_id: str | None = None
+    owasp_category: str | None = None
+    cvss_score: float | None = None
     evidence: Any = None
-    remediation: Optional[str] = None
+    remediation: str | None = None
     created_at: datetime
 
 
 class FindingUpdate(BaseModel):
-    status: Optional[str] = None
-    severity: Optional[str] = None
+    status: str | None = None
+    severity: str | None = None
 
 
 class AgentResponse(BaseModel):

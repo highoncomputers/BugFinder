@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import json
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from bugfinder.ai.client import get_ai_client
 from bugfinder.core.config import Settings
@@ -49,8 +48,9 @@ Respond with JSON: {{"what_it_is": string, "why_dangerous": string, "how_found":
 
         return self._template_explanation(title, description, category, remediation, audience)
 
-    def _template_explanation(self, title: str, description: str, category: str,
-                               remediation: str, audience: str) -> dict[str, str]:
+    def _template_explanation(
+        self, title: str, description: str, category: str, remediation: str, audience: str
+    ) -> dict[str, str]:
         if audience == "beginner":
             return {
                 "what_it_is": f"{title} is a security issue found in the application.",

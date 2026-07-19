@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from urllib.parse import urlparse
 
 from bugfinder.agents.base import AgentResult, BaseAgent
@@ -64,9 +65,8 @@ class ServiceDetectAgent(BaseAgent):
                                 "evidence": {"host": hostname, "port": port, "banner": banner_text[:200]},
                             }
                         )
-            except (OSError, asyncio.TimeoutError, UnicodeDecodeError):
+            except (OSError, TimeoutError, UnicodeDecodeError):
                 continue
-
 
         for f in findings:
             f["id"] = f"svc-finding-{findings.index(f)}"

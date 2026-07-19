@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -26,9 +26,11 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 async def lifespan(app: FastAPI):
     logger.info("BugFinder Web UI starting up")
     from bugfinder.database.session import init_db
+
     await init_db()
     yield
     from bugfinder.database.session import close_db
+
     await close_db()
     logger.info("BugFinder Web UI shutting down")
 
@@ -52,9 +54,11 @@ def create_app() -> FastAPI:
     @app.get("/health")
     async def health():
         from bugfinder.database.session import async_session
+
         try:
             async with async_session() as session:
                 from sqlalchemy import text
+
                 await session.execute(text("SELECT 1"))
             db_status = "connected"
         except Exception as e:
@@ -84,7 +88,9 @@ def create_app() -> FastAPI:
 
     @app.get("/findings/{finding_id}", response_class=HTMLResponse)
     async def finding_detail(request: Request, finding_id: str):
-        return templates.TemplateResponse("finding_detail.html", {"request": request, "finding_id": finding_id, "version": __version__})
+        return templates.TemplateResponse(
+            "finding_detail.html", {"request": request, "finding_id": finding_id, "version": __version__}
+        )
 
     @app.get("/projects", response_class=HTMLResponse)
     async def projects_page(request: Request):
@@ -125,6 +131,7 @@ def create_app() -> FastAPI:
     @app.get("/favicon.ico")
     async def favicon():
         from fastapi.responses import Response
+
         svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🔍</text></svg>'
         return Response(content=svg, media_type="image/svg+xml")
 
@@ -148,6 +155,7 @@ app = create_app()
 
 def main():
     import uvicorn
+
     settings = WebSettings()
     uvicorn.run(
         "bugfinder.web.app:app",

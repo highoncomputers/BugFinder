@@ -4,7 +4,6 @@ import asyncio
 import logging
 import uuid
 from datetime import UTC, datetime
-from typing import Any
 
 import httpx
 
@@ -14,8 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class ProxyServer:
-    def __init__(self, host: str = "127.0.0.1", port: int = 8081,
-                 capture_store: ProxyCaptureStore | None = None):
+    def __init__(self, host: str = "127.0.0.1", port: int = 8081, capture_store: ProxyCaptureStore | None = None):
         self.host = host
         self.port = port
         self.capture = capture_store or ProxyCaptureStore()
@@ -23,9 +21,7 @@ class ProxyServer:
         self._running = False
 
     async def start(self) -> None:
-        self._server = await asyncio.start_server(
-            self._handle_client, self.host, self.port
-        )
+        self._server = await asyncio.start_server(self._handle_client, self.host, self.port)
         self._running = True
         logger.info(f"Proxy server listening on {self.host}:{self.port}")
 
@@ -37,8 +33,7 @@ class ProxyServer:
         await self.capture.flush()
         logger.info("Proxy server stopped")
 
-    async def _handle_client(self, reader: asyncio.StreamReader,
-                              writer: asyncio.StreamWriter) -> None:
+    async def _handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         remote = writer.get_extra_info("peername")
         remote_addr = f"{remote[0]}:{remote[1]}" if remote else "unknown"
 
@@ -48,9 +43,7 @@ class ProxyServer:
                 return
 
             request_text = raw_request.decode("utf-8", errors="replace")
-            method, host, port, path, req_headers, req_body = self._parse_request(
-                request_text
-            )
+            method, host, port, path, req_headers, req_body = self._parse_request(request_text)
 
             if not host:
                 writer.close()
@@ -65,31 +58,31 @@ class ProxyServer:
 
             elapsed = int((datetime.now(UTC) - start).total_seconds() * 1000)
 
-            await self.capture.save({
-                "id": capture_id,
-                "method": method,
-                "host": host,
-                "port": port,
-                "path": path,
-                "request_headers": self._format_headers_for_storage(req_headers),
-                "request_body": req_body,
-                "status_code": status_code,
-                "response_headers": resp_headers_text,
-                "response_body": resp_body,
-                "content_type": self._extract_content_type(resp_headers_text),
-                "duration_ms": elapsed,
-                "size_bytes": len(resp_body) if resp_body else 0,
-                "remote_addr": remote_addr,
-                "tags": "",
-            })
-
-            response_raw = self._build_response(
-                status_code, resp_headers_text, resp_body
+            await self.capture.save(
+                {
+                    "id": capture_id,
+                    "method": method,
+                    "host": host,
+                    "port": port,
+                    "path": path,
+                    "request_headers": self._format_headers_for_storage(req_headers),
+                    "request_body": req_body,
+                    "status_code": status_code,
+                    "response_headers": resp_headers_text,
+                    "response_body": resp_body,
+                    "content_type": self._extract_content_type(resp_headers_text),
+                    "duration_ms": elapsed,
+                    "size_bytes": len(resp_body) if resp_body else 0,
+                    "remote_addr": remote_addr,
+                    "tags": "",
+                }
             )
+
+            response_raw = self._build_response(status_code, resp_headers_text, resp_body)
             writer.write(response_raw.encode("utf-8", errors="replace"))
             await writer.drain()
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             logger.debug(f"Timeout from {remote_addr}")
         except Exception as e:
             logger.debug(f"Proxy error from {remote_addr}: {e}")
@@ -129,11 +122,12 @@ class ProxyServer:
 
         body = ""
         if body_start > 0:
-            body = raw[body_start + 4:]
+            body = raw[body_start + 4 :]
 
         path = url_path
         if url_path.startswith("http"):
             from urllib.parse import urlparse
+
             parsed = urlparse(url_path)
             host = parsed.hostname or host
             port = parsed.port or port
@@ -144,8 +138,7 @@ class ProxyServer:
         return method, host, port, path, headers, body
 
     async def _forward_request(
-        self, method: str, host: str, port: int, path: str,
-        headers: dict[str, str], body: str
+        self, method: str, host: str, port: int, path: str, headers: dict[str, str], body: str
     ) -> tuple[int, str, str]:
         scheme = "https" if port == 443 else "http"
         url = f"{scheme}://{host}:{port}{path}"
@@ -159,21 +152,26 @@ class ProxyServer:
                     content=body if body else None,
                     follow_redirects=False,
                 )
-                resp_headers = "\r\n".join(
-                    f"{k}: {v}" for k, v in resp.headers.items()
-                )
+                resp_headers = "\r\n".join(f"{k}: {v}" for k, v in resp.headers.items())
                 resp_body = resp.text
                 return resp.status_code, resp_headers, resp_body
         except Exception as e:
             return 502, "Content-Type: text/plain", f"Proxy Error: {e}"
 
     def _build_response(self, status_code: int, headers: str, body: str) -> str:
-        status_text = {200: "OK", 301: "Moved", 302: "Found", 304: "Not Modified",
-                       400: "Bad Request", 401: "Unauthorized", 403: "Forbidden",
-                       404: "Not Found", 500: "Internal Server Error",
-                       502: "Bad Gateway", 503: "Service Unavailable"}.get(
-            status_code, "Unknown"
-        )
+        status_text = {
+            200: "OK",
+            301: "Moved",
+            302: "Found",
+            304: "Not Modified",
+            400: "Bad Request",
+            401: "Unauthorized",
+            403: "Forbidden",
+            404: "Not Found",
+            500: "Internal Server Error",
+            502: "Bad Gateway",
+            503: "Service Unavailable",
+        }.get(status_code, "Unknown")
         return f"HTTP/1.1 {status_code} {status_text}\r\n{headers}\r\n\r\n{body}"
 
     def _extract_content_type(self, headers_text: str) -> str:

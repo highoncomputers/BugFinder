@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
@@ -51,13 +49,15 @@ async def list_plugins(user: str = Depends(get_current_user)):
                 if mod and name in mod:
                     hooks.append(hook_name)
 
-        result.append(PluginInfo(
-            name=name,
-            version=version,
-            description=description,
-            type="builtin",
-            hooks=hooks,
-        ))
+        result.append(
+            PluginInfo(
+                name=name,
+                version=version,
+                description=description,
+                type="builtin",
+                hooks=hooks,
+            )
+        )
     return result
 
 
@@ -72,8 +72,11 @@ async def get_plugin(name: str, user: str = Depends(get_current_user)):
     version = getattr(p, "version", "0.1.0")
     description = getattr(p, "description", "")
     return PluginInfo(
-        name=name, version=version, description=description,
-        type="builtin", hooks=[],
+        name=name,
+        version=version,
+        description=description,
+        type="builtin",
+        hooks=[],
     )
 
 
@@ -90,8 +93,8 @@ async def install_plugin(data: InstallRequest, user: str = Depends(get_current_u
 
 @router.delete("/{name}")
 async def remove_plugin(name: str, user: str = Depends(get_current_user)):
+
     from bugfinder.core.config import settings
-    from pathlib import Path
 
     plugin_file = settings.plugins_path / f"{name}.py"
     if plugin_file.exists():

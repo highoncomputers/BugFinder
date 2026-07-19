@@ -24,13 +24,11 @@ class ProxyCaptureStore:
         items = self._buffer.copy()
         self._buffer.clear()
 
-        from bugfinder.database.repository import Repository
-        from bugfinder.database.session import async_session
         from bugfinder.database.models import ProxyCapture
+        from bugfinder.database.session import async_session
 
         try:
             async with async_session() as session:
-                repo = Repository(session)
                 for item in items:
                     pc = ProxyCapture(
                         id=item.get("id", ""),
@@ -55,11 +53,11 @@ class ProxyCaptureStore:
         except Exception as e:
             logger.warning(f"Proxy capture flush error: {e}")
 
-    async def get_history(self, limit: int = 100, offset: int = 0,
-                          host: str | None = None) -> list[dict[str, Any]]:
-        from bugfinder.database.repository import Repository
+    async def get_history(self, limit: int = 100, offset: int = 0, host: str | None = None) -> list[dict[str, Any]]:
+        from sqlalchemy import desc, select
+
+        from bugfinder.database.models import ProxyCapture
         from bugfinder.database.session import async_session
-        from sqlalchemy import select, desc
 
         async with async_session() as session:
             stmt = select(ProxyCapture).order_by(desc(ProxyCapture.created_at))
@@ -87,12 +85,11 @@ class ProxyCaptureStore:
             ]
 
     async def get_detail(self, capture_id: str) -> dict[str, Any] | None:
-        from bugfinder.database.repository import Repository
         from bugfinder.database.session import async_session
 
         async with async_session() as session:
-            repo = Repository(session)
             from bugfinder.database.models import ProxyCapture
+
             c = await session.get(ProxyCapture, capture_id)
             if not c:
                 return None

@@ -49,9 +49,7 @@ class XSSAgent(BaseAgent):
                         findings.append(
                             {
                                 "title": "Form Input Detected (Untested)",
-                                "description": (
-                                    f"Input field '{inp}' found but no form context for automated XSS testing"
-                                ),
+                                "description": (f"Input field '{inp}' found but no form context for automated XSS testing"),
                                 "severity": "info",
                                 "confidence": "needs_review",
                                 "category": "xss",

@@ -4,15 +4,14 @@ import logging
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from typing import Any, Optional
+from typing import Any
 
 from bugfinder.core.config import Settings
 
 logger = logging.getLogger(__name__)
 
 
-async def send_email_notification(subject: str, body: str, to_email: str | None = None,
-                                    html: bool = False) -> bool:
+async def send_email_notification(subject: str, body: str, to_email: str | None = None, html: bool = False) -> bool:
     settings = Settings()
     smtp_host = getattr(settings, "smtp_host", "")
     smtp_port = getattr(settings, "smtp_port", 587)
@@ -37,6 +36,7 @@ async def send_email_notification(subject: str, body: str, to_email: str | None 
 
     try:
         import asyncio
+
         loop = asyncio.get_event_loop()
 
         def _send():

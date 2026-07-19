@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
@@ -83,8 +81,8 @@ async def proxy_repeater(req: RepeaterRequest, user: str = Depends(get_current_u
 
 @router.delete("/proxy/history/{capture_id}")
 async def delete_capture(capture_id: str, user: str = Depends(get_current_user)):
-    from bugfinder.database.session import async_session
     from bugfinder.database.models import ProxyCapture
+    from bugfinder.database.session import async_session
 
     async with async_session() as session:
         c = await session.get(ProxyCapture, capture_id)
@@ -97,9 +95,10 @@ async def delete_capture(capture_id: str, user: str = Depends(get_current_user))
 
 @router.delete("/proxy/history")
 async def clear_history(user: str = Depends(get_current_user)):
-    from bugfinder.database.session import async_session
-    from bugfinder.database.models import ProxyCapture
     from sqlalchemy import delete
+
+    from bugfinder.database.models import ProxyCapture
+    from bugfinder.database.session import async_session
 
     async with async_session() as session:
         await session.execute(delete(ProxyCapture))

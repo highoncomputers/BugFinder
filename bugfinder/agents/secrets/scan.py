@@ -56,8 +56,7 @@ class SecretsScanAgent(BaseAgent):
                             findings.append(
                                 {
                                     "title": f"Potential Secret Found: {name}",
-                                    "description": f"Found potential {name} in {url}. "
-                                    "Value starts with: " + value[:20] + "...",
+                                    "description": f"Found potential {name} in {url}. Value starts with: " + value[:20] + "...",
                                     "severity": severity,
                                     "confidence": "needs_review",
                                     "category": "secret_exposure",

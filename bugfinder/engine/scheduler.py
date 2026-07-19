@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 from bugfinder.agents.base import AgentContext, AgentResult
 from bugfinder.ai.client import get_ai_client
 from bugfinder.core.config import settings
 from bugfinder.core.types import TargetType
 from bugfinder.database.repository import Repository
-from bugfinder.database.session import async_session
+from bugfinder.database.session import get_session_factory
 from bugfinder.knowledge_graph.graph import KnowledgeGraph
 from bugfinder.planner.ai_planner import AIPlanner
 from bugfinder.planner.plan import AssessmentPlan
@@ -62,20 +62,23 @@ class ScanOrchestrator:
 
     def _build_agent_context(self, target: str, target_type: str, scan_id: int) -> AgentContext:
         from bugfinder.target.parsers import parse_target
+
         parsed = parse_target(target)
         return AgentContext(
             target=parsed,
             target_type=target_type,
+            scan_id=str(scan_id),
             knowledge_graph=self.kg,
             ai_client=self.ai_client,
             repository=self.repo,
         )
 
-    async def _load_agent(self, agent_name: str) -> Any:
+    async def _load_agent(self, agent_name: str, context: AgentContext | None = None) -> Any:
         from bugfinder.agents.android.decompile import DecompileAgent
         from bugfinder.agents.android.deeplinks import DeepLinkAgent
         from bugfinder.agents.android.storage import AndroidStorageAgent
         from bugfinder.agents.android.webview import AndroidWebViewAgent
+        from bugfinder.agents.api.auth import APIAuthAgent
         from bugfinder.agents.api.discover import APIDiscoverAgent
         from bugfinder.agents.api.fuzz import APIFuzzAgent
         from bugfinder.agents.api.rate import APIRateAgent
@@ -91,8 +94,16 @@ class ScanOrchestrator:
         from bugfinder.agents.recon.dns import DNSAgent
         from bugfinder.agents.recon.github import GitHubAgent
         from bugfinder.agents.recon.googledorks import GoogleDorkAgent
+        from bugfinder.agents.recon.subdomain import SubdomainAgent
         from bugfinder.agents.recon.tech import TechDetectAgent
         from bugfinder.agents.recon.wayback import WaybackAgent
+        from bugfinder.agents.redteam.c2_implant import C2ImplantAgent
+        from bugfinder.agents.redteam.data_exfil import DataExfilAgent
+        from bugfinder.agents.redteam.evasion import EvasionAgent
+        from bugfinder.agents.redteam.lateral_movement import LateralMovementAgent
+        from bugfinder.agents.redteam.persistence import PersistenceAgent
+        from bugfinder.agents.redteam.pivot import PivotScanAgent
+        from bugfinder.agents.redteam.priv_esc import PrivEscAgent
         from bugfinder.agents.secrets.scan import SecretsScanAgent
         from bugfinder.agents.verification.verify import VerificationAgent
         from bugfinder.agents.web.auth import AuthAgent
@@ -121,6 +132,7 @@ class ScanOrchestrator:
             "recon.wayback": WaybackAgent,
             "recon.github": GitHubAgent,
             "recon.googledorks": GoogleDorkAgent,
+            "recon.subdomain": SubdomainAgent,
             "web.crawler": CrawlerAgent,
             "web.js": JSAnalyzerAgent,
             "web.auth": AuthAgent,
@@ -143,6 +155,7 @@ class ScanOrchestrator:
             "api.discover": APIDiscoverAgent,
             "api.fuzz": APIFuzzAgent,
             "api.rate": APIRateAgent,
+            "api.auth": APIAuthAgent,
             "secrets.scan": SecretsScanAgent,
             "correlation": CorrelationAgent,
             "verification": VerificationAgent,
@@ -158,11 +171,18 @@ class ScanOrchestrator:
             "android.webview": AndroidWebViewAgent,
             "android.storage": AndroidStorageAgent,
             "android.deeplinks": DeepLinkAgent,
+            "redteam.c2_implant": C2ImplantAgent,
+            "redteam.priv_esc": PrivEscAgent,
+            "redteam.lateral_movement": LateralMovementAgent,
+            "redteam.persistence": PersistenceAgent,
+            "redteam.evasion": EvasionAgent,
+            "redteam.data_exfil": DataExfilAgent,
+            "redteam.pivot_scan": PivotScanAgent,
         }
 
         cls = agent_map.get(agent_name)
         if cls:
-            return cls()
+            return cls(context=context)
 
         from bugfinder.agents.base import BaseAgent
 
@@ -170,7 +190,7 @@ class ScanOrchestrator:
             name = agent_name
             description = f"Stub for {agent_name}"
 
-            async def execute(self, context: AgentContext) -> AgentResult:
+            async def execute(self) -> AgentResult:
                 return AgentResult(
                     agent_name=agent_name,
                     status="completed",
@@ -186,7 +206,7 @@ class ScanOrchestrator:
         self.progress.status = "running"
 
         update_scan_progress(scan_id, {"status": "running", "progress": 0, "target": target})
-        async with async_session() as session:
+        async with get_session_factory()() as session:
             repo = Repository(session)
             await repo.update_scan(scan_id, status="running", progress=0.0)
 
@@ -212,15 +232,18 @@ class ScanOrchestrator:
             self.progress.percent = (i / max(plan.total_steps, 1)) * 100
             self.log(f"Step {i + 1}/{plan.total_steps}: {step.rationale}")
 
-            update_scan_progress(scan_id, {
-                "step": step.agent_name,
-                "progress": self.progress.percent,
-                "rationale": step.rationale,
-            })
+            update_scan_progress(
+                scan_id,
+                {
+                    "step": step.agent_name,
+                    "progress": self.progress.percent,
+                    "rationale": step.rationale,
+                },
+            )
 
-            agent = await self._load_agent(step.agent_name)
+            agent = await self._load_agent(step.agent_name, context=ctx)
             try:
-                result = await agent.execute(ctx)
+                result = await agent.execute()
                 if result and result.findings:
                     self.progress.findings_count += len(result.findings)
                     for f_data in result.findings:
@@ -252,7 +275,7 @@ class ScanOrchestrator:
 
         update_scan_progress(scan_id, {"status": "completed", "progress": 100, "findings": self.progress.findings_count})
 
-        async with async_session() as session:
+        async with get_session_factory()() as session:
             repo = Repository(session)
             await repo.update_scan(
                 scan_id,
@@ -268,7 +291,7 @@ class ScanOrchestrator:
         return True
 
     async def _persist_findings(self, scan_id: int, findings: list[dict]) -> None:
-        async with async_session() as session:
+        async with get_session_factory()() as session:
             repo = Repository(session)
             for f in findings:
                 await repo.create_finding(

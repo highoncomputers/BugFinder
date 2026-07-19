@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import sys
 import typer
 from rich import print as rprint
 
@@ -37,11 +36,12 @@ def proxy(
 ) -> None:
     """Launch the intercepting proxy server."""
     import asyncio
+
     from bugfinder.proxy.server import ProxyServer
 
     async def _run():
         rprint(f"[green]Starting BugFinder Proxy on {host}:{port}[/green]")
-        rprint(f"[yellow]Configure your browser to use this proxy[/yellow]")
+        rprint("[yellow]Configure your browser to use this proxy[/yellow]")
         rprint(f"[yellow]View captured traffic at http://127.0.0.1:{web_port}/proxy[/yellow]")
         server = ProxyServer(host=host, port=port)
         await server.start()
@@ -60,12 +60,14 @@ def web(
 ) -> None:
     """Launch the BugFinder Web UI."""
     import uvicorn
+
     rprint(f"[green]Starting BugFinder Web UI on http://{host}:{port}[/green]")
     uvicorn.run("bugfinder.web.app:app", host=host, port=port, log_level="info")
 
 
 def launch_tui() -> None:
     from bugfinder.cli.app import BugFinderTUI
+
     tui = BugFinderTUI()
     tui.run()
 

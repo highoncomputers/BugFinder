@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from bugfinder.core.config import Settings
 from bugfinder.reporting.html import generate_html_report
@@ -11,9 +11,9 @@ from bugfinder.reporting.html import generate_html_report
 logger = logging.getLogger(__name__)
 
 
-async def generate_pdf_report(target: str, scan_id: int, findings: list[Any],
-                                assets: list[Any] | None = None,
-                                output_path: str | None = None) -> Optional[str]:
+async def generate_pdf_report(
+    target: str, scan_id: int, findings: list[Any], assets: list[Any] | None = None, output_path: str | None = None
+) -> str | None:
     try:
         from weasyprint import HTML
     except ImportError:

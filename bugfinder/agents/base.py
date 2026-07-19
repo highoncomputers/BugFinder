@@ -4,8 +4,6 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any
 
-from typing import Any, Optional
-
 from bugfinder.ai.client import BaseAIProvider
 from bugfinder.database.repository import Repository
 from bugfinder.knowledge_graph.graph import KnowledgeGraph
@@ -17,7 +15,7 @@ class AgentContext:
     target_type: str
     scan_id: str
     knowledge_graph: KnowledgeGraph
-    ai_client: Optional[BaseAIProvider]
+    ai_client: BaseAIProvider | None
     repository: Repository
     config: dict[str, Any] = field(default_factory=dict)
 

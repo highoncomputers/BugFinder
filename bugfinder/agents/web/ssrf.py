@@ -53,9 +53,7 @@ class SSRFAgent(BaseAgent):
 
             for param in params[:5]:
                 for payload in SSRF_PAYLOADS[:3]:
-                    test_url = (
-                        f"{base_url}?{param}={payload}" if "?" not in base_url else f"{base_url}&{param}={payload}"
-                    )
+                    test_url = f"{base_url}?{param}={payload}" if "?" not in base_url else f"{base_url}&{param}={payload}"
                     try:
                         tr = await client.get(test_url, headers=headers, follow_redirects=False)
                         if tr.status_code in (200, 302, 301):

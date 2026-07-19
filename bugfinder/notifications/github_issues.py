@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import json
 import logging
-from typing import Any, Optional
+from typing import Any
 
 import httpx
 
@@ -77,8 +76,6 @@ async def create_finding_issue(finding: Any, repo: str | None = None) -> bool:
     labels = ["security", f"severity-{severity}"]
 
     if repo:
-        # Override repo from config for this call
-        old_repo = getattr(Settings(), "github_repo", "")
         Settings.github_repo = repo
 
     return await create_github_issue(title, body, labels)

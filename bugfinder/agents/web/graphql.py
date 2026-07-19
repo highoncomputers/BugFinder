@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from typing import Any
-
-from bugfinder.agents.base import BaseAgent, AgentContext, AgentResult
-from bugfinder.core.types import Severity, Confidence
+from bugfinder.agents.base import AgentContext, AgentResult, BaseAgent
+from bugfinder.core.types import Confidence, Severity
 from bugfinder.utils.http import post
 
 
@@ -26,42 +24,47 @@ class GraphQLAgent(BaseAgent):
             url = f"{base_url}{endpoint}"
             try:
                 resp = await post(url, json=introspection_query, timeout=10)
-                text = resp.text if hasattr(resp, 'text') else ""
-                if '"data"' in text and '__schema' in text:
+                text = resp.text if hasattr(resp, "text") else ""
+                if '"data"' in text and "__schema" in text:
                     fields: list[str] = []
-                    if 'types' in text:
+                    if "types" in text:
                         import re
+
                         fields = re.findall(r'"name"\s*:\s*"([^"]+)"', text)
 
-                    findings.append({
-                        "title": "GraphQL Introspection Enabled",
-                        "description": f"GraphQL introspection is enabled at {endpoint}. This exposes the entire schema.",
-                        "severity": Severity.MEDIUM,
-                        "confidence": Confidence.HIGH,
-                        "category": "graphql",
-                        "cwe_id": "200",
-                        "owasp_category": "A01-Broken Access Control",
-                        "cvss_score": 5.3,
-                        "evidence": {"endpoint": endpoint, "detected_types": fields[:20]},
-                        "remediation": "Disable introspection in production. Use allowlisting for query complexity.",
-                    })
+                    findings.append(
+                        {
+                            "title": "GraphQL Introspection Enabled",
+                            "description": f"GraphQL introspection is enabled at {endpoint}. This exposes the entire schema.",
+                            "severity": Severity.MEDIUM,
+                            "confidence": Confidence.HIGH,
+                            "category": "graphql",
+                            "cwe_id": "200",
+                            "owasp_category": "A01-Broken Access Control",
+                            "cvss_score": 5.3,
+                            "evidence": {"endpoint": endpoint, "detected_types": fields[:20]},
+                            "remediation": "Disable introspection in production. Use allowlisting for query complexity.",
+                        }
+                    )
 
                     depth_payload = {"query": "{" + " ".join(["test" + str(i) + ": __typename " for i in range(10)]) + "}"}
                     try:
                         await post(url, json=depth_payload, timeout=10)
                     except Exception:
-                        findings.append({
-                            "title": "GraphQL Depth Limiting Bypass",
-                            "description": f"No depth limiting detected at {endpoint}",
-                            "severity": Severity.LOW,
-                            "confidence": Confidence.MEDIUM,
-                            "category": "graphql",
-                            "cwe_id": "770",
-                            "owasp_category": "A04-Unrestricted Resource Consumption",
-                            "cvss_score": 4.3,
-                            "evidence": {"endpoint": endpoint, "test": "deeply_nested_query_accepted"},
-                            "remediation": "Implement query depth limiting and complexity analysis.",
-                        })
+                        findings.append(
+                            {
+                                "title": "GraphQL Depth Limiting Bypass",
+                                "description": f"No depth limiting detected at {endpoint}",
+                                "severity": Severity.LOW,
+                                "confidence": Confidence.MEDIUM,
+                                "category": "graphql",
+                                "cwe_id": "770",
+                                "owasp_category": "A04-Unrestricted Resource Consumption",
+                                "cvss_score": 4.3,
+                                "evidence": {"endpoint": endpoint, "test": "deeply_nested_query_accepted"},
+                                "remediation": "Implement query depth limiting and complexity analysis.",
+                            }
+                        )
                     break
             except Exception:
                 pass

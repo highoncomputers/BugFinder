@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime
-from typing import Any, Callable, Coroutine, Optional
+from collections.abc import Callable, Coroutine
+from typing import Any
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
@@ -82,9 +82,7 @@ class ScanScheduler:
         profile: str = "quick",
         run_func: Callable[..., Coroutine[Any, Any, Any]] | None = None,
     ) -> ScheduledScan:
-        ss = ScheduledScan(
-            scan_id=scan_id, target=target, profile=profile, interval_minutes=interval_minutes
-        )
+        ss = ScheduledScan(scan_id=scan_id, target=target, profile=profile, interval_minutes=interval_minutes)
 
         trigger = IntervalTrigger(minutes=interval_minutes)
 

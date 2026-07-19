@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, Request, Response, status
+from fastapi import APIRouter, HTTPException, Response, status
 from pydantic import BaseModel
 
 from bugfinder.web.auth import create_session_token
@@ -59,6 +59,7 @@ async def login(req: LoginRequest, response: Response):
 @router.post("/api/validate-key")
 async def validate_key(req: LoginRequest):
     from bugfinder.core.config import Settings
+
     cfg = Settings()
     valid_keys = [
         cfg.nvidia_api_key,
@@ -74,8 +75,10 @@ async def validate_key(req: LoginRequest):
 @router.post("/api/test-connection")
 async def test_connection(req: LoginRequest):
     from bugfinder.core.config import Settings
+
     cfg = Settings()
     import httpx
+
     base_url = (cfg.nvidia_base_url or "https://integrate.api.nvidia.com/v1").rstrip("/")
     try:
         async with httpx.AsyncClient(

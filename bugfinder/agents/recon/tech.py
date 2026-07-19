@@ -85,9 +85,7 @@ class TechDetectAgent(BaseAgent):
                     findings.append(
                         {
                             "title": "Missing X-Frame-Options Header",
-                            "description": (
-                                "The X-Frame-Options header is not set, making the site vulnerable to clickjacking"
-                            ),
+                            "description": ("The X-Frame-Options header is not set, making the site vulnerable to clickjacking"),
                             "severity": "medium",
                             "category": "security_header",
                             "evidence": {"url": url, "missing_header": "X-Frame-Options"},

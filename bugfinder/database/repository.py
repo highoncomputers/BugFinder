@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -40,8 +40,11 @@ class Repository:
 
     # ScanSession
     async def create_scan(
-        self, target: str, target_type: str | None = None,
-        profile: str = "quick", project_id: str | None = None,
+        self,
+        target: str,
+        target_type: str | None = None,
+        profile: str = "quick",
+        project_id: str | None = None,
     ) -> ScanSession:
         target_type_str = target_type.value if hasattr(target_type, "value") else str(target_type) if target_type else "unknown"
         scan = ScanSession(target=target, target_type=target_type_str, profile=profile, project_id=project_id)
@@ -105,9 +108,7 @@ class Repository:
     async def get_finding(self, finding_id: str) -> Finding | None:
         return await self.session.get(Finding, finding_id)
 
-    async def list_findings(
-        self, scan_id: str | None = None, severity: str | None = None
-    ) -> list[Finding]:
+    async def list_findings(self, scan_id: str | None = None, severity: str | None = None) -> list[Finding]:
         stmt = select(Finding)
         if scan_id:
             stmt = stmt.where(Finding.scan_id == scan_id)

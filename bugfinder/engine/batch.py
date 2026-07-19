@@ -4,12 +4,12 @@ import asyncio
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import yaml
 
 from bugfinder.core.config import Settings
-from bugfinder.core.types import ScanStatus, TargetType
+from bugfinder.core.types import TargetType
 from bugfinder.engine.scheduler import ScanOrchestrator
 from bugfinder.target.detector import detect_target_type
 
@@ -20,8 +20,8 @@ logger = logging.getLogger(__name__)
 class BatchTarget:
     target: str
     profile: str = "quick"
-    project_id: Optional[int] = None
-    name: Optional[str] = None
+    project_id: int | None = None
+    name: str | None = None
 
 
 @dataclass
@@ -53,12 +53,14 @@ class BatchScanner:
                 if isinstance(item, str):
                     targets.append(BatchTarget(target=item))
                 else:
-                    targets.append(BatchTarget(
-                        target=item.get("target", item.get("url", "")),
-                        profile=item.get("profile", "quick"),
-                        project_id=item.get("project_id"),
-                        name=item.get("name"),
-                    ))
+                    targets.append(
+                        BatchTarget(
+                            target=item.get("target", item.get("url", "")),
+                            profile=item.get("profile", "quick"),
+                            project_id=item.get("project_id"),
+                            name=item.get("name"),
+                        )
+                    )
         else:
             with open(p) as f:
                 for line in f:
@@ -86,9 +88,9 @@ class BatchScanner:
                     orchestrator = ScanOrchestrator()
 
                     from bugfinder.database.repository import Repository
-                    from bugfinder.database.session import async_session
+                    from bugfinder.database.session import get_session_factory
 
-                    async with async_session() as session:
+                    async with get_session_factory()() as session:
                         repo = Repository(session)
                         scan = await repo.create_scan(
                             target=t.target,
@@ -99,13 +101,14 @@ class BatchScanner:
                         scan_id = scan.id
 
                     from bugfinder.web.routes.sse import update_scan_progress
+
                     update_scan_progress(scan_id, {"status": "running", "progress": 0})
 
                     await orchestrator.run_scan(scan_id, t.target, target_type, t.profile)
 
                     update_scan_progress(scan_id, {"status": "completed", "progress": 100})
 
-                    async with async_session() as session:
+                    async with get_session_factory()() as session:
                         repo = Repository(session)
                         scan = await repo.get_scan(scan_id)
                         findings = await repo.list_findings(scan_id=scan_id) if scan else []

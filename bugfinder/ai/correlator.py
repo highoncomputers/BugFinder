@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from bugfinder.ai.client import get_ai_client
 from bugfinder.core.config import Settings
@@ -49,44 +49,56 @@ Respond with JSON: {{"chains": [{{"chain_id": int, "name": string, "findings": [
         return self._rule_based_correlation(finding_summaries)
 
     def _rule_based_correlation(self, findings: list[dict]) -> list[dict[str, Any]]:
-        injection_findings = [i for i, f in enumerate(findings) if f.get("category", "").lower() in ("xss", "sqli", "ssti", "lfi", "ssrf")]
+        injection_findings = [
+            i for i, f in enumerate(findings) if f.get("category", "").lower() in ("xss", "sqli", "ssti", "lfi", "ssrf")
+        ]
         auth_findings = [i for i, f in enumerate(findings) if f.get("category", "").lower() in ("auth", "jwt", "cors", "csrf")]
-        config_findings = [i for i, f in enumerate(findings) if f.get("category", "").lower() in ("secrets", "config", "exposure")]
+        config_findings = [
+            i for i, f in enumerate(findings) if f.get("category", "").lower() in ("secrets", "config", "exposure")
+        ]
         recon_findings = [i for i, f in enumerate(findings) if f.get("category", "").lower() in ("recon", "info")]
 
         chains = []
         if injection_findings:
-            chains.append({
-                "chain_id": 1,
-                "name": "Injection Attack Chain",
-                "findings": injection_findings,
-                "flow_description": "Injection vulnerabilities that could be chained for code execution or data extraction",
-                "remediation_priority": 1,
-            })
+            chains.append(
+                {
+                    "chain_id": 1,
+                    "name": "Injection Attack Chain",
+                    "findings": injection_findings,
+                    "flow_description": "Injection vulnerabilities that could be chained for code execution or data extraction",
+                    "remediation_priority": 1,
+                }
+            )
         if auth_findings:
-            chains.append({
-                "chain_id": 2,
-                "name": "Authentication Bypass Chain",
-                "findings": auth_findings,
-                "flow_description": "Authentication and authorization weaknesses that could lead to account takeover",
-                "remediation_priority": 2,
-            })
+            chains.append(
+                {
+                    "chain_id": 2,
+                    "name": "Authentication Bypass Chain",
+                    "findings": auth_findings,
+                    "flow_description": "Authentication and authorization weaknesses that could lead to account takeover",
+                    "remediation_priority": 2,
+                }
+            )
         if config_findings:
-            chains.append({
-                "chain_id": 3,
-                "name": "Information Disclosure Chain",
-                "findings": config_findings,
-                "flow_description": "Exposed secrets and misconfigurations that aid further attacks",
-                "remediation_priority": 3,
-            })
+            chains.append(
+                {
+                    "chain_id": 3,
+                    "name": "Information Disclosure Chain",
+                    "findings": config_findings,
+                    "flow_description": "Exposed secrets and misconfigurations that aid further attacks",
+                    "remediation_priority": 3,
+                }
+            )
         if recon_findings:
-            chains.append({
-                "chain_id": 4,
-                "name": "Reconnaissance Findings",
-                "findings": recon_findings,
-                "flow_description": "Information gathering results that provide context for exploitation",
-                "remediation_priority": 4,
-            })
+            chains.append(
+                {
+                    "chain_id": 4,
+                    "name": "Reconnaissance Findings",
+                    "findings": recon_findings,
+                    "flow_description": "Information gathering results that provide context for exploitation",
+                    "remediation_priority": 4,
+                }
+            )
         return chains
 
     async def build_attack_graph(self, chains: list[dict]) -> dict[str, Any]:

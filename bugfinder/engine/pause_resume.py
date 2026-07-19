@@ -3,16 +3,13 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Optional
-
-from bugfinder.core.types import ScanStatus
 
 logger = logging.getLogger(__name__)
 
 
-class ScanControlState(str, Enum):
+class ScanControlState(str, Enum):  # noqa: UP042
     RUNNING = "running"
     PAUSED = "paused"
     CANCELLED = "cancelled"
@@ -23,11 +20,11 @@ class ScanControlState(str, Enum):
 class ScanControl:
     scan_id: int
     state: ScanControlState = ScanControlState.RUNNING
-    paused_at: Optional[datetime] = None
-    resumed_at: Optional[datetime] = None
-    cancelled_at: Optional[datetime] = None
+    paused_at: datetime | None = None
+    resumed_at: datetime | None = None
+    cancelled_at: datetime | None = None
     progress: float = 0.0
-    current_step: Optional[str] = None
+    current_step: str | None = None
     _pause_event: asyncio.Event = field(default_factory=asyncio.Event)
     _cancel_event: asyncio.Event = field(default_factory=asyncio.Event)
 
@@ -41,19 +38,19 @@ class ScanControl:
 
     def pause(self):
         self.state = ScanControlState.PAUSED
-        self.paused_at = datetime.utcnow()
+        self.paused_at = datetime.now(UTC)
         self._pause_event.clear()
         logger.info("Scan %d paused", self.scan_id)
 
     def resume(self):
         self.state = ScanControlState.RUNNING
-        self.resumed_at = datetime.utcnow()
+        self.resumed_at = datetime.now(UTC)
         self._pause_event.set()
         logger.info("Scan %d resumed", self.scan_id)
 
     def cancel(self):
         self.state = ScanControlState.CANCELLED
-        self.cancelled_at = datetime.utcnow()
+        self.cancelled_at = datetime.now(UTC)
         self._cancel_event.set()
         self._pause_event.set()
         logger.info("Scan %d cancelled", self.scan_id)
@@ -72,7 +69,7 @@ class ScanManager:
         self._scans[scan_id] = ctrl
         return ctrl
 
-    def get_control(self, scan_id: int) -> Optional[ScanControl]:
+    def get_control(self, scan_id: int) -> ScanControl | None:
         return self._scans.get(scan_id)
 
     async def pause_scan(self, scan_id: int) -> bool:

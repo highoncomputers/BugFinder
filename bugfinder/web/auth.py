@@ -3,7 +3,6 @@ from __future__ import annotations
 import hashlib
 import hmac
 import time
-from typing import Optional
 
 from fastapi import HTTPException, Request, status
 from itsdangerous import URLSafeTimedSerializer
@@ -19,7 +18,7 @@ def create_session_token(user_id: str = "admin") -> str:
     return serializer.dumps(payload)
 
 
-def verify_session_token(token: str, max_age: int | None = None) -> Optional[str]:
+def verify_session_token(token: str, max_age: int | None = None) -> str | None:
     if max_age is None:
         max_age = settings.web_session_expiry_hours * 3600
     try:

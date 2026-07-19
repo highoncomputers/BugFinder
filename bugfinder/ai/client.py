@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any, Optional
+from typing import Any
 
 import httpx
 
@@ -125,11 +125,15 @@ class AnthropicProvider(BaseAIProvider):
             resp.raise_for_status()
             data = resp.json()
             return {
-                "choices": [{
-                    "message": {
-                        "content": data.get("content", [{}])[0].get("text", "") if isinstance(data.get("content"), list) else str(data.get("content", ""))
+                "choices": [
+                    {
+                        "message": {
+                            "content": data.get("content", [{}])[0].get("text", "")
+                            if isinstance(data.get("content"), list)
+                            else str(data.get("content", ""))
+                        }
                     }
-                }]
+                ]
             }
 
 
@@ -148,20 +152,17 @@ class OllamaProvider(BaseAIProvider):
             resp = await client.post("/api/chat", json=payload)
             resp.raise_for_status()
             data = resp.json()
-            return {
-                "choices": [{
-                    "message": {"content": data.get("message", {}).get("content", "")}
-                }]
-            }
+            return {"choices": [{"message": {"content": data.get("message", {}).get("content", "")}}]}
 
 
-def get_ai_client() -> Optional[BaseAIProvider]:
+def get_ai_client() -> BaseAIProvider | None:
     provider = settings.ai_provider.lower()
     if provider == "nvidia":
         if settings.nvidia_api_key:
             return NVIDIAProvider(settings.nvidia_api_key, settings.nvidia_model, settings.nvidia_base_url)
     elif provider == "openai":
         from bugfinder.core.config import Settings
+
         cfg = Settings()
         api_key = getattr(cfg, "openai_api_key", "") or getattr(settings, "openai_api_key", "")
         model = getattr(cfg, "openai_model", "gpt-4o") or getattr(settings, "openai_model", "gpt-4o")

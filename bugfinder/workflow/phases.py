@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from bugfinder.core.types import TargetType
 from bugfinder.workflow import Phase
 

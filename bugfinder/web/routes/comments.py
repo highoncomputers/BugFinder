@@ -23,9 +23,10 @@ class CommentResponse(BaseModel):
 
 @router.get("/findings/{finding_id}/comments", response_model=list[CommentResponse])
 async def list_comments(finding_id: str, user: str = Depends(get_current_user)):
-    from bugfinder.database.session import async_session
-    from bugfinder.database.models import Comment, User
     from sqlalchemy import select
+
+    from bugfinder.database.models import Comment, User
+    from bugfinder.database.session import async_session
 
     async with async_session() as session:
         stmt = (
@@ -38,7 +39,8 @@ async def list_comments(finding_id: str, user: str = Depends(get_current_user)):
         rows = result.all()
         return [
             CommentResponse(
-                id=c.id, finding_id=c.finding_id,
+                id=c.id,
+                finding_id=c.finding_id,
                 author=u.username,
                 content=c.content,
                 created_at=c.created_at.isoformat() if c.created_at else "",
@@ -50,9 +52,10 @@ async def list_comments(finding_id: str, user: str = Depends(get_current_user)):
 
 @router.post("/findings/{finding_id}/comments", response_model=CommentResponse, status_code=201)
 async def create_comment(finding_id: str, data: CommentCreate, user: str = Depends(get_current_user)):
-    from bugfinder.database.session import async_session
-    from bugfinder.database.models import Comment, User
     from sqlalchemy import select
+
+    from bugfinder.database.models import Comment, User
+    from bugfinder.database.session import async_session
 
     async with async_session() as session:
         user_obj = await session.execute(select(User).where(User.username == user))
@@ -71,7 +74,8 @@ async def create_comment(finding_id: str, data: CommentCreate, user: str = Depen
         await session.commit()
 
         return CommentResponse(
-            id=comment.id, finding_id=comment.finding_id,
+            id=comment.id,
+            finding_id=comment.finding_id,
             author=user_obj.username,
             content=comment.content,
             created_at=comment.created_at.isoformat() if comment.created_at else "",
@@ -81,8 +85,8 @@ async def create_comment(finding_id: str, data: CommentCreate, user: str = Depen
 
 @router.delete("/findings/{finding_id}/comments/{comment_id}")
 async def delete_comment(finding_id: str, comment_id: str, user: str = Depends(get_current_user)):
-    from bugfinder.database.session import async_session
     from bugfinder.database.models import Comment
+    from bugfinder.database.session import async_session
 
     async with async_session() as session:
         comment = await session.get(Comment, comment_id)

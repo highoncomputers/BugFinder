@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Optional
+from dataclasses import dataclass
 
 from bugfinder.core.types import TargetType
 
@@ -20,8 +19,25 @@ WORKFLOW_TEMPLATES: dict[str, WorkflowTemplate] = {
         name="Bug Bounty Standard",
         description="Standard bug bounty workflow: recon, web vuln scan, exploit, report",
         target_types=[TargetType.WEBSITE, TargetType.URL, TargetType.DOMAIN, TargetType.API],
-        agents=["dns", "tech", "port", "cert", "crawler", "xss", "sqli", "ssti", "lfi", "ssrf",
-                "cookies", "csp", "cors", "jwt", "redirect", "host_header", "correlation"],
+        agents=[
+            "dns",
+            "tech",
+            "port",
+            "cert",
+            "crawler",
+            "xss",
+            "sqli",
+            "ssti",
+            "lfi",
+            "ssrf",
+            "cookies",
+            "csp",
+            "cors",
+            "jwt",
+            "redirect",
+            "host_header",
+            "correlation",
+        ],
         phases=["recon", "vuln_detection", "exploitation", "reporting"],
     ),
     "quick-win": WorkflowTemplate(
@@ -35,10 +51,41 @@ WORKFLOW_TEMPLATES: dict[str, WorkflowTemplate] = {
         name="Deep Dive",
         description="Maximum coverage: all agents, cloud checks, race conditions, Android analysis",
         target_types=[TargetType.WEBSITE, TargetType.API, TargetType.ANDROID, TargetType.IP_ADDRESS, TargetType.CIDR],
-        agents=["dns", "tech", "port", "cert", "service", "crawler", "wayback", "github", "googledorks",
-                "xss", "sqli", "ssti", "xxe", "lfi", "ssrf", "graphql", "jwt", "cors", "cookies",
-                "csrf", "redirect", "host_header", "race", "cache", "secrets", "tls",
-                "s3", "gcp", "azure", "firebase", "decompile", "verification", "correlation"],
+        agents=[
+            "dns",
+            "tech",
+            "port",
+            "cert",
+            "service",
+            "crawler",
+            "wayback",
+            "github",
+            "googledorks",
+            "xss",
+            "sqli",
+            "ssti",
+            "xxe",
+            "lfi",
+            "ssrf",
+            "graphql",
+            "jwt",
+            "cors",
+            "cookies",
+            "csrf",
+            "redirect",
+            "host_header",
+            "race",
+            "cache",
+            "secrets",
+            "tls",
+            "s3",
+            "gcp",
+            "azure",
+            "firebase",
+            "decompile",
+            "verification",
+            "correlation",
+        ],
         phases=["recon", "vuln_detection", "exploitation", "reporting"],
     ),
     "compliance": WorkflowTemplate(
@@ -65,12 +112,9 @@ WORKFLOW_TEMPLATES: dict[str, WorkflowTemplate] = {
 }
 
 
-def get_template(name: str) -> Optional[WorkflowTemplate]:
+def get_template(name: str) -> WorkflowTemplate | None:
     return WORKFLOW_TEMPLATES.get(name)
 
 
 def list_templates() -> list[dict[str, str]]:
-    return [
-        {"name": t.name, "description": t.description}
-        for t in WORKFLOW_TEMPLATES.values()
-    ]
+    return [{"name": t.name, "description": t.description} for t in WORKFLOW_TEMPLATES.values()]

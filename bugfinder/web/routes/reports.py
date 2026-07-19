@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException, Depends, Query
-from fastapi.responses import PlainTextResponse, HTMLResponse, JSONResponse
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
+
 from bugfinder.web.auth import get_current_user
 
 router = APIRouter()
@@ -26,6 +27,7 @@ async def get_report(
 
     if fmt == "markdown":
         from bugfinder.reporting.markdown import generate_markdown_report
+
         report = generate_markdown_report(
             target=scan.target,
             scan_id=scan_id,
@@ -38,6 +40,7 @@ async def get_report(
 
     elif fmt == "html":
         from bugfinder.reporting.html import generate_html_report
+
         report = generate_html_report(
             target=scan.target,
             scan_id=scan_id,
@@ -48,6 +51,7 @@ async def get_report(
 
     elif fmt == "json":
         from bugfinder.reporting.json_report import generate_json_report
+
         report = generate_json_report(
             target=scan.target,
             scan_id=scan_id,
