@@ -57,7 +57,7 @@ def _show_header(title: str) -> None:
     console.print(f"  [bold cyan]{'=' * 40}[/bold cyan]\n")
 
 
-def _show_menu(title: str, options: dict[str, tuple[str, str, str]], extra: str = "") -> str | None:
+def _show_menu(title: str, options: dict[str, tuple[str, str, str]], extra: str = "") -> str:
     _show_header(title)
     table = Table.grid(padding=(0, 3))
     table.add_column("", style="cyan", no_wrap=True)

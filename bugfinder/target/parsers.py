@@ -7,17 +7,23 @@ from bugfinder.core.exceptions import TargetDetectionError
 from bugfinder.core.types import TargetType
 
 
-class Target:
-    def __init__(
-        self,
+class Target(str):
+    def __new__(
+        cls,
         raw: str,
         target_type: TargetType,
         normalized: str = "",
-    ) -> None:
-        self.raw = raw
-        self.type = target_type
-        self.normalized = normalized or raw
-        self.metadata: dict = {}
+    ) -> Target:
+        instance = str.__new__(cls, raw)
+        instance._raw = raw
+        instance.type = target_type
+        instance.normalized = normalized or raw
+        instance.metadata: dict = {}
+        return instance
+
+    @property
+    def raw(self) -> str:
+        return self._raw
 
     @property
     def hostname(self) -> str | None:

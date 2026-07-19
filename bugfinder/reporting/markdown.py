@@ -115,8 +115,11 @@ def generate_markdown_report(
             lines.append("**Evidence**:")
             lines.append("")
             lines.append("```")
-            for k, v in evidence.items():
-                lines.append(f"  {k}: {v}")
+            if isinstance(evidence, dict):
+                for k, v in evidence.items():
+                    lines.append(f"  {k}: {v}")
+            else:
+                lines.append(f"  {evidence}")
             lines.append("```")
             lines.append("")
 

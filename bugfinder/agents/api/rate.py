@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 
-from bugfinder.agents.base import AgentContext, AgentResult, BaseAgent
+from bugfinder.agents.base import AgentResult, BaseAgent
 from bugfinder.core.types import Confidence, Severity
 from bugfinder.utils.http import get
 
@@ -11,9 +11,9 @@ class APIRateAgent(BaseAgent):
     category = "api"
     name = "rate"
 
-    async def execute(self, context: AgentContext) -> AgentResult:
+    async def execute(self) -> AgentResult:
         findings = []
-        target = context.target
+        target = self.context.target
         base_url = f"{target.scheme}://{target.hostname}"
         if target.port:
             base_url += f":{target.port}"

@@ -32,6 +32,9 @@ class Confidence(enum.StrEnum):
     VERIFIED = "verified"
     LIKELY = "likely"
     NEEDS_REVIEW = "needs_review"
+    HIGH = "likely"
+    MEDIUM = "needs_review"
+    LOW = "needs_review"
 
 
 class FindingStatus(enum.StrEnum):

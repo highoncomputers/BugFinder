@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from bugfinder.agents.base import AgentContext, AgentResult, BaseAgent
+from bugfinder.agents.base import AgentResult, BaseAgent
 from bugfinder.core.types import Confidence, Severity
 from bugfinder.utils.http import get
 
@@ -11,9 +11,9 @@ class S3Agent(BaseAgent):
     category = "cloud"
     name = "s3"
 
-    async def execute(self, context: AgentContext) -> AgentResult:
+    async def execute(self) -> AgentResult:
         findings = []
-        target = context.target
+        target = self.context.target
 
         # Check page for S3 bucket references
         base_url = f"{target.scheme}://{target.hostname}"

@@ -29,13 +29,8 @@ from bugfinder import __version__
 
 class WelcomeScreen(Screen):
     BINDINGS = [
-        Binding("q", "quit", "Quit"),
-        Binding("s", "start_scan", "Scan"),
-        Binding("1", "switch_screen('welcome')", "Home"),
-        Binding("2", "switch_screen('progress')", "Progress"),
-        Binding("3", "switch_screen('results')", "Results"),
-        Binding("4", "switch_screen('agents')", "Agents"),
-        Binding("5", "switch_screen('config')", "Config"),
+        Binding("q", "app.quit", "Quit"),
+        Binding("s", "app.start_scan_from_welcome", "Scan"),
     ]
 
     def compose(self) -> ComposeResult:
@@ -65,55 +60,36 @@ class WelcomeScreen(Screen):
         self._load_recent()
 
     def _load_recent(self) -> None:
-        recent = getattr(self.app, "_recent_scans", [])
+        app = self.app
+        if not hasattr(app, "_recent_scans") or not app._recent_scans:
+            return
         lv = self.query_one("#recent-list", ListView)
         lv.clear()
-        if not recent:
-            lv.append(ListItem(Label("[dim]No recent scans[/dim]")))
-        for r in recent[-10:]:
+        for r in app._recent_scans[-10:]:
             lv.append(ListItem(Label(f"  {r}")))
-
-    async def action_start_scan(self) -> None:
-        target = self.query_one("#target-input", Input).value.strip()
-        if not target:
-            self.notify("Please enter a target", severity="warning", timeout=3)
-            return
-        self.app._scan_target = target
-        self.app._scan_mode = "quick"
-        self.app.switch_screen("progress")
-        self.app.run_scan()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         target = self.query_one("#target-input", Input).value.strip()
         if not target:
             self.notify("Please enter a target", severity="warning", timeout=3)
             return
-        self.app._scan_target = target
-        self.app._scan_mode = event.button.id or "quick"
-        self.app.switch_screen("progress")
-        self.app.run_scan()
+        app = self.app
+        app._scan_target = target
+        app._scan_mode = event.button.id or "quick"
+        app.start_scan()
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
         if event.value.strip():
-            self.app._scan_target = event.value.strip()
-            self.app._scan_mode = "quick"
-            self.app.switch_screen("progress")
-            self.app.run_scan()
-
-    def action_switch_screen(self, screen: str) -> None:
-        self.app.switch_screen(screen)
+            app = self.app
+            app._scan_target = event.value.strip()
+            app._scan_mode = "quick"
+            app.start_scan()
 
 
 class ScanProgressScreen(Screen):
     BINDINGS = [
-        Binding("q", "quit", "Quit"),
-        Binding("h", "go_home", "Home"),
-        Binding("r", "go_results", "Results"),
-        Binding("1", "switch_screen('welcome')", "Home"),
-        Binding("2", "switch_screen('progress')", "Progress"),
-        Binding("3", "switch_screen('results')", "Results"),
-        Binding("4", "switch_screen('agents')", "Agents"),
-        Binding("5", "switch_screen('config')", "Config"),
+        Binding("q", "app.quit", "Quit"),
+        Binding("h", "app.go_home", "Home"),
     ]
 
     def compose(self) -> ComposeResult:
@@ -123,26 +99,16 @@ class ScanProgressScreen(Screen):
             Static("", id="progress-target"),
             ProgressBar(total=100, show_eta=True, id="scan-progress"),
             Static("", id="progress-status"),
-            RichLog(id="progress-log", highlight=True, markup=True, max_lines=100),
+            RichLog(id="progress-log", highlight=True, markup=True, max_lines=200),
             id="progress-container",
         )
         yield Footer()
 
     def on_mount(self) -> None:
-        target = getattr(self.app, "_scan_target", "unknown")
-        mode = getattr(self.app, "_scan_mode", "quick")
-        self.query_one("#progress-target", Static).update(
-            f"  [cyan]{target}[/cyan]  [dim]({mode})[/dim]"
-        )
-
-    def action_go_home(self) -> None:
-        self.app.switch_screen("welcome")
-
-    def action_go_results(self) -> None:
-        self.app.switch_screen("results")
-
-    def action_switch_screen(self, screen: str) -> None:
-        self.app.switch_screen(screen)
+        app = self.app
+        target = getattr(app, "_scan_target", "unknown")
+        mode = getattr(app, "_scan_mode", "quick")
+        self.query_one("#progress-target", Static).update(f"  [cyan]{target}[/cyan]  [dim]({mode})[/dim]")
 
     def update_progress(self, pct: int, status: str) -> None:
         self.query_one("#scan-progress", ProgressBar).progress = pct
@@ -151,17 +117,17 @@ class ScanProgressScreen(Screen):
     def append_log(self, msg: str) -> None:
         self.query_one("#progress-log", RichLog).write(msg)
 
+    def reset(self) -> None:
+        self.query_one("#scan-progress", ProgressBar).progress = 0
+        self.query_one("#progress-status", Static).update("")
+        self.query_one("#progress-log", RichLog).clear()
+
 
 class ScanResultsScreen(Screen):
     BINDINGS = [
-        Binding("q", "quit", "Quit"),
-        Binding("h", "go_home", "Home"),
-        Binding("s", "start_new", "New Scan"),
-        Binding("1", "switch_screen('welcome')", "Home"),
-        Binding("2", "switch_screen('progress')", "Progress"),
-        Binding("3", "switch_screen('results')", "Results"),
-        Binding("4", "switch_screen('agents')", "Agents"),
-        Binding("5", "switch_screen('config')", "Config"),
+        Binding("q", "app.quit", "Quit"),
+        Binding("h", "app.go_home", "Home"),
+        Binding("n", "app.new_scan", "New Scan"),
     ]
 
     def compose(self) -> ComposeResult:
@@ -179,37 +145,29 @@ class ScanResultsScreen(Screen):
         yield Footer()
 
     def on_mount(self) -> None:
-        findings = getattr(self.app, "_scan_findings", [])
-        summary = getattr(self.app, "_scan_summary", "No results yet")
+        self._display_results()
+
+    def _display_results(self) -> None:
+        app = self.app
+        findings = getattr(app, "_scan_findings", [])
+        summary = getattr(app, "_scan_summary", "No results yet")
         self.query_one("#results-summary", Static).update(f"  [bold]{summary}[/bold]")
         rl = self.query_one("#results-findings", RichLog)
+        rl.clear()
         if findings:
             for f in findings:
                 sev = f.get("severity", "info")
-                style = {"critical": "red", "high": "orange1", "medium": "yellow", "low": "blue", "info": "dim white"}.get(sev, "")
+                colors = {"critical": "red", "high": "orange1", "medium": "yellow", "low": "blue", "info": "dim white"}
+                style = colors.get(sev, "")
                 rl.write(f"[{style}][{sev.upper()}][/{style}] {f.get('title', 'Untitled')}")
         else:
             rl.write("[dim]No findings to display[/dim]")
 
-    def action_go_home(self) -> None:
-        self.app.switch_screen("welcome")
-
-    def action_start_new(self) -> None:
-        self.app.switch_screen("welcome")
-
-    def action_switch_screen(self, screen: str) -> None:
-        self.app.switch_screen(screen)
-
 
 class AgentsScreen(Screen):
     BINDINGS = [
-        Binding("q", "quit", "Quit"),
-        Binding("h", "go_home", "Home"),
-        Binding("1", "switch_screen('welcome')", "Home"),
-        Binding("2", "switch_screen('progress')", "Progress"),
-        Binding("3", "switch_screen('results')", "Results"),
-        Binding("4", "switch_screen('agents')", "Agents"),
-        Binding("5", "switch_screen('config')", "Config"),
+        Binding("q", "app.quit", "Quit"),
+        Binding("h", "app.go_home", "Home"),
     ]
 
     def compose(self) -> ComposeResult:
@@ -245,23 +203,12 @@ class AgentsScreen(Screen):
     def on_input_changed(self, event: Input.Changed) -> None:
         self._refresh_agents(event.value)
 
-    def action_go_home(self) -> None:
-        self.app.switch_screen("welcome")
-
-    def action_switch_screen(self, screen: str) -> None:
-        self.app.switch_screen(screen)
-
 
 class ConfigScreen(Screen):
     BINDINGS = [
-        Binding("q", "quit", "Quit"),
-        Binding("h", "go_home", "Home"),
-        Binding("s", "save", "Save"),
-        Binding("1", "switch_screen('welcome')", "Home"),
-        Binding("2", "switch_screen('progress')", "Progress"),
-        Binding("3", "switch_screen('results')", "Results"),
-        Binding("4", "switch_screen('agents')", "Agents"),
-        Binding("5", "switch_screen('config')", "Config"),
+        Binding("q", "app.quit", "Quit"),
+        Binding("h", "app.go_home", "Home"),
+        Binding("s", "save_config", "Save"),
     ]
 
     def compose(self) -> ComposeResult:
@@ -282,7 +229,7 @@ class ConfigScreen(Screen):
             Static("[bold]Reports Directory[/bold]", classes="config-label"),
             Input(placeholder="/path/to/reports", id="config-reports-path"),
             Static("", id="config-spacer-3"),
-            Static("[dim]Key bindings: q=quit, h=home, s=save, 1-5=screens[/dim]", id="config-hint"),
+            Static("[dim]Key bindings: q=quit, h=home, s=save, n=scan[/dim]", id="config-hint"),
             id="config-container",
         )
         yield Footer()
@@ -303,7 +250,7 @@ class ConfigScreen(Screen):
             settings.beginner_mode = False
             self.notify("Beginner mode OFF", severity="information", timeout=2)
 
-    def action_save(self) -> None:
+    def action_save_config(self) -> None:
         from bugfinder.core.config import settings
         api_key = self.query_one("#config-api-key", Input).value
         if api_key and api_key != "********":
@@ -313,12 +260,6 @@ class ConfigScreen(Screen):
             settings.reports_path = Path(reports_path)
         self.notify("Configuration saved", severity="information", timeout=2)
 
-    def action_go_home(self) -> None:
-        self.app.switch_screen("welcome")
-
-    def action_switch_screen(self, screen: str) -> None:
-        self.app.switch_screen(screen)
-
 
 class BugFinderTUI(App):
     TITLE = "BugFinder"
@@ -326,82 +267,63 @@ class BugFinderTUI(App):
     CSS_PATH = "app.tcss"
 
     BINDINGS = [
-        Binding("q", "quit", "Quit"),
-        Binding("h", "go_home", "Home"),
-        Binding("s", "start_scan", "Scan"),
-        Binding("r", "show_results", "Results"),
-        Binding("a", "show_agents", "Agents"),
-        Binding("c", "show_config", "Config"),
-        Binding("1", "screen_welcome", "1"),
-        Binding("2", "screen_progress", "2"),
-        Binding("3", "screen_results", "3"),
-        Binding("4", "screen_agents", "4"),
-        Binding("5", "screen_config", "5"),
+        Binding("1", "go_to('welcome')", "Home", priority=True),
+        Binding("2", "go_to('progress')", "Progress", priority=True),
+        Binding("3", "go_to('results')", "Results", priority=True),
+        Binding("4", "go_to('agents')", "Agents", priority=True),
+        Binding("5", "go_to('config')", "Config", priority=True),
+        Binding("q", "quit", "Quit", priority=True),
+        Binding("h", "go_to('welcome')", "Home", priority=True),
     ]
 
-    _scan_target: str = ""
-    _scan_mode: str = "quick"
-    _scan_findings: list = []
-    _scan_summary: str = ""
-    _recent_scans: list[str] = []
-
-    SCREENS = {
-        "welcome": WelcomeScreen,
-        "progress": ScanProgressScreen,
-        "results": ScanResultsScreen,
-        "agents": AgentsScreen,
-        "config": ConfigScreen,
-    }
+    _screen_instances: dict[str, Screen] = {}
 
     def on_mount(self) -> None:
+        self._screen_instances = {
+            "welcome": WelcomeScreen(),
+            "progress": ScanProgressScreen(),
+            "results": ScanResultsScreen(),
+            "agents": AgentsScreen(),
+            "config": ConfigScreen(),
+        }
+        for name, screen in self._screen_instances.items():
+            self.install_screen(screen, name)
         self.push_screen("welcome")
 
-    def switch_screen(self, screen_name: str) -> None:
-        if screen_name in self.SCREENS:
-            self.push_screen(screen_name)
+    def action_go_to(self, name: str) -> None:
+        if name in self._screen_instances:
+            self.push_screen(name)
 
     def action_go_home(self) -> None:
-        self.switch_screen("welcome")
+        self.pop_screen()
+        self.push_screen("welcome")
 
-    def action_start_scan(self) -> None:
-        target = getattr(self, "_scan_target", "")
-        if not target:
-            self.switch_screen("welcome")
-            return
-        self.switch_screen("progress")
-        self.run_scan()
+    def action_new_scan(self) -> None:
+        self.pop_screen()
+        self.push_screen("welcome")
 
-    def action_show_results(self) -> None:
-        self.switch_screen("results")
+    def start_scan(self) -> None:
+        self._screen_instances["progress"].reset()
+        self.push_screen("progress")
+        self.run_scan_worker()
 
-    def action_show_agents(self) -> None:
-        self.switch_screen("agents")
-
-    def action_show_config(self) -> None:
-        self.switch_screen("config")
-
-    def action_screen_welcome(self) -> None:
-        self.switch_screen("welcome")
-
-    def action_screen_progress(self) -> None:
-        self.switch_screen("progress")
-
-    def action_screen_results(self) -> None:
-        self.switch_screen("results")
-
-    def action_screen_agents(self) -> None:
-        self.switch_screen("agents")
-
-    def action_screen_config(self) -> None:
-        self.switch_screen("config")
+    def action_start_scan_from_welcome(self) -> None:
+        welcome = self._screen_instances["welcome"]
+        target = welcome.query_one("#target-input", Input).value.strip()
+        if target:
+            self._scan_target = target
+            self._scan_mode = "quick"
+            self.start_scan()
+        else:
+            welcome.notify("Please enter a target", severity="warning", timeout=3)
 
     @work(exclusive=True)
-    async def run_scan(self) -> None:
+    async def run_scan_worker(self) -> None:
         target = self._scan_target
         mode = self._scan_mode
+        progress = self._screen_instances["progress"]
 
-        progress_screen = self.SCREENS["progress"]
-        progress_screen.append_log(f"[bold cyan]Starting {mode} scan on {target}[/bold cyan]")
+        progress.append_log(f"[bold cyan]Starting {mode} scan on {target}[/bold cyan]")
 
         try:
             from bugfinder.target.detector import detect_target_type, normalize_target
@@ -457,8 +379,8 @@ class BugFinderTUI(App):
 
             for i, step in enumerate(steps):
                 pct = int(((i) / total) * 100)
-                progress_screen.update_progress(pct, step["rationale"])
-                progress_screen.append_log(f"[dim]→ {step['rationale']} ({step['agent']})[/dim]")
+                progress.update_progress(pct, step["rationale"])
+                progress.append_log(f"[dim]→ {step['rationale']} ({step['agent']})[/dim]")
 
                 agent = await _load_agent(step["agent"], context=ctx)
                 try:
@@ -468,27 +390,30 @@ class BugFinderTUI(App):
                             findings.append(f)
                             sev = f.get("severity", "info")
                             icon = {"critical": "🟥", "high": "🟧", "medium": "🟨", "low": "🟦", "info": "ℹ"}.get(sev, "•")
-                            progress_screen.append_log(f"  {icon} [{sev.upper()}] {f['title']}")
+                            progress.append_log(f"  {icon} [{sev.upper()}] {f['title']}")
                     if result and result.summary:
-                        progress_screen.append_log(f"  [green]✓ {result.summary}[/green]")
+                        progress.append_log(f"  [green]✓ {result.summary}[/green]")
                     else:
-                        progress_screen.append_log(f"  [green]✓ {step['agent']} completed[/green]")
+                        progress.append_log(f"  [green]✓ {step['agent']} completed[/green]")
                 except Exception as e:
-                    progress_screen.append_log(f"  [red]✗ {step['agent']} failed: {e}[/red]")
+                    progress.append_log(f"  [red]✗ {step['agent']} failed: {e}[/red]")
 
                 elapsed = time.monotonic() - start_time
-                progress_screen.append_log(f"  [dim]⏱ {elapsed:.0f}s | {pct}%[/dim]")
+                progress.append_log(f"  [dim]⏱ {elapsed:.0f}s | {pct}%[/dim]")
 
-            progress_screen.update_progress(100, "Scan complete")
-            progress_screen.append_log("[bold green]✓ Scan completed successfully[/bold green]")
+            progress.update_progress(100, "Scan complete")
+            progress.append_log("[bold green]✓ Scan completed successfully[/bold green]")
 
             self._scan_findings = findings
             self._scan_summary = f"{len(findings)} findings in {total} steps"
+            if not hasattr(self, "_recent_scans"):
+                self._recent_scans = []
             self._recent_scans.append(f"{target} ({mode}) - {len(findings)} findings")
 
-            self.SCREENS["results"].refresh()
-            self.switch_screen("results")
+            self._screen_instances["results"].refresh()
+            self.pop_screen()
+            self.push_screen("results")
 
         except Exception as e:
-            progress_screen.append_log(f"[bold red]✗ Scan failed: {e}[/bold red]")
+            progress.append_log(f"[bold red]✗ Scan failed: {e}[/bold red]")
             self._scan_summary = f"Scan failed: {e}"

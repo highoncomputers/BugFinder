@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from bugfinder.agents.base import AgentContext, AgentResult, BaseAgent
+from bugfinder.agents.base import AgentResult, BaseAgent
 from bugfinder.core.types import Confidence, Severity
 from bugfinder.utils.http import get
 
@@ -9,9 +9,9 @@ class SubdomainAgent(BaseAgent):
     category = "recon"
     name = "subdomain"
 
-    async def execute(self, context: AgentContext) -> AgentResult:
+    async def execute(self) -> AgentResult:
         findings = []
-        target = context.target
+        target = self.context.target
         domain = target.hostname
 
         common_subdomains = [

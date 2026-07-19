@@ -3,7 +3,7 @@ from __future__ import annotations
 import base64
 import json
 
-from bugfinder.agents.base import AgentContext, AgentResult, BaseAgent
+from bugfinder.agents.base import AgentResult, BaseAgent
 from bugfinder.core.types import Confidence, Severity
 from bugfinder.utils.http import get
 
@@ -12,9 +12,9 @@ class JWTAgent(BaseAgent):
     category = "web"
     name = "jwt"
 
-    async def execute(self, context: AgentContext) -> AgentResult:
+    async def execute(self) -> AgentResult:
         findings = []
-        target = context.target
+        target = self.context.target
         base_url = f"{target.scheme}://{target.hostname}"
         if target.port:
             base_url += f":{target.port}"

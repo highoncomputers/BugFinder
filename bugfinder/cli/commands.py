@@ -588,7 +588,7 @@ async def _async_scan(
     generator = report_generators.get(report_format, report_generators["markdown"])
     report_content = generator(
         target=target.raw,
-        scan_id=scan_id,
+        target_type=ttype,
         findings=all_findings,
         assets=all_assets,
         scan_duration=elapsed,

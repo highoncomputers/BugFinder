@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from bugfinder.agents.base import AgentContext, AgentResult, BaseAgent
+from bugfinder.agents.base import AgentResult, BaseAgent
 from bugfinder.core.types import Confidence, Severity
 
 
@@ -10,9 +10,9 @@ class DeepLinkAgent(BaseAgent):
     category = "android"
     name = "deeplinks"
 
-    async def execute(self, context: AgentContext) -> AgentResult:
+    async def execute(self) -> AgentResult:
         findings = []
-        target = context.target
+        target = self.context.target
         apk_path = target.raw if hasattr(target, "raw") else target.hostname
 
         try:
