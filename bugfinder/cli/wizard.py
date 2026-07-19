@@ -310,6 +310,15 @@ def _examples_menu() -> None:
     Prompt.ask("\n[dim]Press Enter to continue[/dim]")
 
 
+def _launch_tui() -> None:
+    _show_header("LAUNCHING TERMINAL DASHBOARD")
+    rprint("  [green]Starting Textual TUI...[/green]\n")
+    from bugfinder.cli.app import BugFinderTUI
+
+    app = BugFinderTUI()
+    app.run()
+
+
 async def run_wizard() -> None:
     while True:
         _show_header("MAIN MENU")
@@ -322,13 +331,14 @@ async def run_wizard() -> None:
         table.add_row("  [3]", "PoC Generator", "  Generate proof-of-concept exploits")
         table.add_row("  [4]", "Reports", "  Generate & view scan reports")
         table.add_row("  [5]", "Configuration", "  Set API keys, toggle modes")
-        table.add_row("  [6]", "Examples", "  View usage examples")
+        table.add_row("  [6]", "Terminal Dashboard", "  Launch Textual TUI interface")
+        table.add_row("  [7]", "Examples", "  View usage examples")
         table.add_row("", "", "")
         table.add_row("  [0]", "Exit", "  Quit BugFinder")
         console.print(table)
         console.print()
 
-        choice = Prompt.ask("[bold yellow]Enter choice", choices=["1", "2", "3", "4", "5", "6", "0"], default="0")
+        choice = Prompt.ask("[bold yellow]Enter choice", choices=["1", "2", "3", "4", "5", "6", "7", "0"], default="0")
 
         if choice == "0":
             _show_header("GOODBYE")
@@ -345,6 +355,8 @@ async def run_wizard() -> None:
         elif choice == "5":
             _config_menu()
         elif choice == "6":
+            _launch_tui()
+        elif choice == "7":
             _examples_menu()
 
 

@@ -36,7 +36,9 @@ def main(
     version: bool = typer.Option(False, "--version", "-V", callback=_version_callback, is_eager=True),
 ) -> None:
     if ctx.invoked_subcommand is None:
-        _show_banner()
+        from bugfinder.cli.wizard import run_wizard
+
+        asyncio.run(run_wizard())
 
 
 def _show_banner() -> None:
@@ -352,9 +354,10 @@ def examples() -> None:
 [bold underline green]▶  INTERFACES[/bold underline green]
 ───────────────────────────────────────────
 
-  [green]11. Interactive wizard (numbered menus)[/green]
-      [bold]bf wizard[/bold]
-      → Guided menu: 1=Scan, 2=Red Team, 3=PoC, 4=Reports, 5=Config, 6=Help
+  [green]11. Launch the all-in-one interactive console[/green]
+      [bold]bf[/bold]
+      → Opens the full-featured menu: 1=Scan, 2=Red Team, 3=PoC,
+        4=Reports, 5=Config, 6=TUI Dashboard, 7=Examples, 0=Exit
 
   [green]12. Terminal UI dashboard[/green]
       [bold]bf tui[/bold]
